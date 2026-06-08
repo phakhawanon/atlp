@@ -6,13 +6,13 @@ ATLP is a module that enables automatic labelling for Galbot G1 teleoperation da
 Currently, ATLP can only label RGB head camera video from Galbot G1 using Qwen3-VL-2B-Instruct.
 
 ## Documentation
-Run index.html inside '/docs/build/html/', or by using
+Run index.html inside `/docs/build/html/`, or by using
 ```bash
 # Inside the root of the repo
 cd docs/build/html/
 python -m http.server 8000
 ```
-and access the 'http://localhost:8000/' in your browser.
+and access the `http://localhost:8000/` in your browser.
 
 ## Installation
 ```bash
@@ -27,7 +27,7 @@ Don't forget to use 'conda deactivate' when you are done using this module.
 Users are encouraged to import this module inside Jupyter notebook and use it as advised in the example of the documentation.
 
 ## Uninstall
-Delete all directories from this repo and the downloaded Qwen3 model inside '~/.cache/huggingface/hub/'.
+Delete all directories from this repo and the downloaded Qwen3 model inside `~/.cache/huggingface/hub/`.
 
 Also run this command to remove the conda environment.
 ```bash
