@@ -31,5 +31,5 @@ Delete all directories from this repo and the downloaded Qwen3 model inside `~/.
 
 Also run this command to remove the conda environment.
 ```bash
-conda env remove –name atlp-env
+conda env remove --name atlp-env
 ```

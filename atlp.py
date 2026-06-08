@@ -36,7 +36,7 @@ import torch
 
 # Leave this empty if using in this directory
 # must end with /
-root_directory = Path("~/galbotg1_recorded_data/processed/").expanduser()
+root_directory = Path(".").expanduser()
 
 # The tuple of endings that will be treated as a datapoint
 datapoint_ending = ("_record0")
