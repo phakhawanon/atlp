@@ -5,6 +5,20 @@ ATLP is a module that enables automatic labelling for Galbot G1 teleoperation da
 
 Currently, ATLP can only label RGB head camera video from Galbot G1 using Qwen3-VL-2B-Instruct.
 
+## Installation
+First, clone this repo by
+```bash
+git clone https://github.com/phakhawanon/atlp/  
+```
+Then, run these commands to set up the conda environment for running the module.
+```bash
+# Inside the root of the repo
+conda create -n atlp-env pip
+conda activate atlp-env
+pip install -r requirements.txt
+```
+Don't forget to use `conda deactivate` when you are done using this module.
+
 ## Documentation
 Run index.html inside `/docs/build/html/`, or by using
 ```bash
@@ -13,15 +27,6 @@ cd docs/build/html/
 python -m http.server 8000
 ```
 and access the `http://localhost:8000/` in your browser.
-
-## Installation
-```bash
-# Inside the root of the repo
-conda create -n atlp-env pip
-conda activate atlp-env
-pip install -r requirements.txt
-```
-Don't forget to use 'conda deactivate' when you are done using this module.
 
 ## Usage
 Users are encouraged to import this module inside Jupyter notebook and use it as advised in the example of the documentation.
