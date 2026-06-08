@@ -1,5 +1,5 @@
 # Automatic Task Labelling Pipeline
-*Version 0.25* Updated 06/08/2026
+*Version 0.25* Updated 08/06/2026
 
 ATLP is a module that enables automatic labelling for Galbot G1 teleoperation dataset.
 
@@ -9,6 +9,7 @@ Currently, ATLP can only label RGB head camera video from Galbot G1 using Qwen3-
 Run index.html inside '/docs/build/html/', or by using
 ```bash
 # Inside the root of the repo
+cd docs/build/html/
 python -m http.server 8000
 ```
 and access the 'http://localhost:8000/' in your browser.
