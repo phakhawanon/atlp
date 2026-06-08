@@ -2,3 +2,4 @@ __pycache__
 test-files/
 docs/source/
 .ipynb_checkpoints
+header.json
