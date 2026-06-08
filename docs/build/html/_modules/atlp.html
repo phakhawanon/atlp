@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>atlp &#8212; ATLP  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=2bf1fcf8" />
+    
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">ATLP  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">atlp</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for atlp</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Summary of Automatic Task Labelling Pipeline (ATLP) Module</span>
+
+<span class="sd">    Currently support automatic task labelling from Galbot G1 teleoperation dataset</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Datapoint is a folder inside the dataset that ends with &quot;_record0&quot;</span>
+
+<span class="sd">        The datapoint folder should at least contain camera_front_head_rgb.mp4, which is the RGB video output from the Galbot G1 head camera</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import atlp</span>
+<span class="sd">        &gt;&gt;&gt; set_root(root_to_dataset)</span>
+<span class="sd">        &gt;&gt;&gt; populate_header() # Track the data in the dataset</span>
+<span class="sd">        &gt;&gt;&gt; list_datapoints() # Print all details of all datapoints</span>
+<span class="sd">        &gt;&gt;&gt; show_statistics() # See how many unlabelled datapoints are there in the dataset</span>
+<span class="sd">        &gt;&gt;&gt; label() # Label all unlabelled datapoints</span>
+<span class="sd">        &gt;&gt;&gt; display_instruction() # Print all instructions of all datapoints</span>
+
+<span class="sd">    .. todo::</span>
+<span class="sd">        - Structure the code so it can be expanded vertically</span>
+<span class="sd">        - Implement trivial error handling (input type mismatch, etc) for all functions</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Automatic Task Labelling Pipeline (ATLP)</span>
+<span class="c1"># Assume that nothing can altered the established header.json</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># Comment these two lines if you don&#39;t want to label anything</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoModelForImageTextToText</span><span class="p">,</span> <span class="n">AutoProcessor</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="c1"># Leave this empty if using in this directory</span>
+<span class="c1"># must end with /</span>
+<span class="n">root_directory</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;~/galbotg1_recorded_data/processed/&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
+
+<span class="c1"># The tuple of endings that will be treated as a datapoint</span>
+<span class="n">datapoint_ending</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;_record0&quot;</span><span class="p">)</span>
+
+<span class="c1"># The list of default tags</span>
+<span class="n">default_tag_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Pick and Place&quot;</span><span class="p">,</span> <span class="s2">&quot;Pouring&quot;</span><span class="p">]</span>
+
+<span class="n">header_path</span> <span class="o">=</span> <span class="n">root_directory</span> <span class="o">/</span> <span class="s2">&quot;header.json&quot;</span>
+
+<span class="c1"># __all__ = [</span>
+<span class="c1">#     &quot;display_instruction&quot;, &quot;label&quot;, &quot;list_datapoints&quot;, &quot;populate_header&quot;,</span>
+<span class="c1">#     &quot;reset_label&quot;, &quot;set_root&quot;, &quot;show_statistics&quot;, &quot;tag_add&quot;, &quot;tag_get&quot;,</span>
+<span class="c1">#     &quot;tag_remove&quot;</span>
+<span class="c1"># ]</span>
+
+<div class="viewcode-block" id="load_data">
+<a class="viewcode-back" href="../atlp.html#atlp.load_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load header.json as a dictionary</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of the header.json</span>
+
+<span class="sd">        .. todo::</span>
+<span class="sd">            - handle no header file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># Load header file to dict</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">header_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="write_data">
+<a class="viewcode-back" href="../atlp.html#atlp.write_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write data to header.json</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data: Dictionary in .json format</span>
+
+<span class="sd">        .. todo::</span>
+<span class="sd">            - handle no header file</span>
+<span class="sd">            - handle invalid data input</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">header_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
+
+    
+
+<div class="viewcode-block" id="set_root">
+<a class="viewcode-back" href="../atlp.html#atlp.set_root">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_root</span><span class="p">(</span><span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the root path</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            root: The path to the root of the dataset</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            Always use set_root(path_to_root) atleast once before working with the dataset</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">global</span> <span class="n">root_directory</span><span class="p">,</span> <span class="n">header_path</span>
+    <span class="n">root_directory</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
+    <span class="n">header_path</span> <span class="o">=</span> <span class="n">root_directory</span> <span class="o">/</span> <span class="s2">&quot;header.json&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="has_header">
+<a class="viewcode-back" href="../atlp.html#atlp.has_header">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">has_header</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if there is a header file (header.json) in the root directory</span>
+<span class="sd">    </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            True if the current root has appropriate header.json, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Check if the file exists</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="n">header_path</span><span class="p">)</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># Check if the content is .json</span>
+    <span class="k">try</span><span class="p">:</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+
+    <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+            
+
+<div class="viewcode-block" id="generate_header">
+<a class="viewcode-back" href="../atlp.html#atlp.generate_header">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_header</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate empty header file (header.json) if the header file has not been generated yet</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">has_header</span><span class="p">():</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Header file has already existed&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">header_path</span><span class="p">):</span>
+
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">header_path</span><span class="p">)</span>    
+
+    <span class="n">header_content</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;count_datapoint&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;count_labelled&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;count_failed&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;count_checked&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;tag_list&quot;</span><span class="p">:</span> <span class="n">default_tag_list</span><span class="p">,</span>
+        <span class="s2">&quot;datapoints&quot;</span><span class="p">:</span> <span class="p">{}</span>
+    <span class="p">}</span>
+
+    <span class="n">write_data</span><span class="p">(</span><span class="n">header_content</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Empty header file has been generated&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="count_datapoint_from_root">
+<a class="viewcode-back" href="../atlp.html#atlp.count_datapoint_from_root">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">count_datapoint_from_root</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return number of datapoints inside the root directory</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Number of datapoints currently inside the root</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">count_datapoint</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">root_directory</span><span class="p">)</span> <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">datapoint_ending</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">count_datapoint</span></div>
+
+
+
+<div class="viewcode-block" id="populate_header">
+<a class="viewcode-back" href="../atlp.html#atlp.populate_header">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">populate_header</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        - Update the header file to track all datapoints inside the root directory</span>
+<span class="sd">        - tag_list is untounched.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Ensure that header file is generated</span>
+    <span class="n">generate_header</span><span class="p">()</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+
+    <span class="n">count_datapoint</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_datapoint&quot;</span><span class="p">]</span>
+    <span class="n">count_labelled</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_labelled&quot;</span><span class="p">]</span>
+    <span class="n">count_failed</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_failed&quot;</span><span class="p">]</span>
+    <span class="n">count_checked</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_checked&quot;</span><span class="p">]</span>
+
+    <span class="n">deleted_datapoints</span> <span class="o">=</span> <span class="p">[]</span>
+        
+    <span class="c1"># Handling deleted datapoints</span>
+    <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
+
+        <span class="n">datapoint_path</span> <span class="o">=</span> <span class="n">root_directory</span> <span class="o">/</span> <span class="n">datapoint</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">datapoint_path</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+
+            <span class="n">count_datapoint</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_failed&quot;</span><span class="p">]:</span> <span class="n">count_failed</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_labelled&quot;</span><span class="p">]:</span> <span class="n">count_labelled</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_checked&quot;</span><span class="p">]:</span> <span class="n">count_checked</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">deleted_datapoints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datapoint</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">deleted_datapoints</span><span class="p">:</span>
+                    
+        <span class="k">del</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">]</span> <span class="c1"># delete the datapoint</span>
+
+    <span class="c1"># Handling untracked datapoints</span>
+    <span class="k">if</span> <span class="n">count_datapoint</span> <span class="o">!=</span> <span class="n">count_datapoint_from_root</span><span class="p">()</span> <span class="ow">or</span> <span class="n">count_datapoint</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]):</span>
+
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">root_directory</span><span class="p">):</span>
+
+            <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">datapoint_ending</span><span class="p">)</span> <span class="ow">and</span> <span class="n">entry</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
+
+                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;instruction&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                    <span class="s2">&quot;is_failed&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;is_labelled&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;is_checked&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                <span class="p">}</span>
+                <span class="n">count_datapoint</span> <span class="o">+=</span> <span class="mi">1</span>
+                
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_datapoint&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">count_datapoint</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_labelled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">count_labelled</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_failed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">count_failed</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_checked&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">count_checked</span>
+    
+    <span class="n">write_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="tag_add">
+<a class="viewcode-back" href="../atlp.html#atlp.tag_add">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tag_add</span><span class="p">(</span><span class="n">new_tag</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add new tag(s) to the tag_list of the header file</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            new_tag: Append that string or a list of strings to the tag_list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">new_tag</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_tag</span><span class="p">)</span>
+        
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">new_tag</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">new_tag</span>
+        
+    <span class="k">else</span><span class="p">:</span>
+        
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Wrong type for new_tag, it must be either str or list&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Remove duplicate tags</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]))</span>
+
+    <span class="n">write_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="tag_get">
+<a class="viewcode-back" href="../atlp.html#atlp.tag_get">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tag_get</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return tag_list of the header file</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of all tags inside the header.json</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>    
+
+    <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span></div>
+
+    
+
+<div class="viewcode-block" id="tag_remove">
+<a class="viewcode-back" href="../atlp.html#atlp.tag_remove">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tag_remove</span><span class="p">(</span><span class="n">tag</span> <span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove one tag from the tag_list of header file</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag: String of tag to be removed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]:</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span>
+        <span class="n">write_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="show_statistics">
+<a class="viewcode-back" href="../atlp.html#atlp.show_statistics">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">show_statistics</span><span class="p">(</span><span class="n">list_datapoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Print out statistics of the header file</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            list_datapoint: If true, all datapoint names are printed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Statistics for dataset </span><span class="si">{</span><span class="n">root_directory</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;count_datapoint: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;count_datapoint&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;count_labelled: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;count_labelled&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;count_failed: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;count_failed&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>    
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;count_checkedt: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;count_checked&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;tag_list: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;tag_list&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">list_datapoint</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;List of Datapoints:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">datapoint</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="list_datapoints">
+<a class="viewcode-back" href="../atlp.html#atlp.list_datapoints">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_datapoints</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Print out all details of each datapoint</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">T</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="label">
+<a class="viewcode-back" href="../atlp.html#atlp.label">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">label</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        - Label all tracked, unlabelled datapoints</span>
+<span class="sd">        - Write the result in the header file</span>
+
+<span class="sd">        Warnings:</span>
+<span class="sd">            - Require a lot of VRAM from Qwen3-VL-2B-Instruct</span>
+<span class="sd">            - Must use populate_header() first to ensure that all files are tracked</span>
+<span class="sd">            </span>
+<span class="sd">        .. todo::</span>
+<span class="sd">            - arbitrarily choose VLM model from inputs</span>
+<span class="sd">            - disable the warning while labelling</span>
+<span class="sd">            - enhance debugging prints</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">model_name</span> <span class="o">=</span> <span class="s2">&quot;Qwen/Qwen3-VL-2B-Instruct&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Start labelling with model </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2"> on path </span><span class="si">{</span><span class="n">root_directory</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># default: Load the model on the available device(s)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForImageTextToText</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+        <span class="n">model_name</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">device_map</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+        <span class="c1">#attn_implementation=&quot;flash_attention_2&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">processor</span> <span class="o">=</span> <span class="n">AutoProcessor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_name</span><span class="p">)</span>
+
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+
+    <span class="n">tag_lists</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_labelled&quot;</span><span class="p">]:</span>
+
+            <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+            
+            <span class="k">while</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+
+                <span class="n">custom_prompt</span> <span class="o">=</span> <span class="s2">&quot;You are Galbot G1’s instruction labeller. The robot is instructed to perform a certain task. You are given one RGB videos from the robot’s head camera, while the robot is performing the task. You must determine the instruction given to the robot based on the three videos you have received. The task instruction must be a complete sentence. You must also determine the tags for each task. This tag represents the skill the robot needs to perform the task. There may be more than one tags that can represent the task, but please strictly stick to one tag per task unless the task is complex. Please examine and use the list of the current tags first. If the current tags do not describe the task well, create the new tag. The videos that you have given might sometimes be a failed attempt or incomplete tasks from the teleoperation process. You must also identify if the videos you have been given are the failed or incomplete tasks, which are characterized by hand manipulations with no object involved. Output the result as the .json format. Specify instruction: (string), the tags (list of strings), and is_failed: (boolean). Current tag lists: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">tag_lists</span><span class="p">)</span>
+
+                <span class="c1"># Messages containing a video url(or a local path) and a text query</span>
+                <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[</span>
+                            <span class="p">{</span>
+                                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;video&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;video&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">root_directory</span> <span class="o">/</span> <span class="n">datapoint</span> <span class="o">/</span> <span class="s2">&quot;camera_front_head_rgb.mp4&quot;</span><span class="p">),</span>
+                                <span class="s2">&quot;fps&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                            <span class="p">},</span>
+                            <span class="c1"># {</span>
+                                <span class="c1"># &quot;type&quot;: &quot;video&quot;,</span>
+                                <span class="c1"># &quot;video&quot;: str(root_directory / datapoint / &quot;camera_left_wrist.mp4&quot;),</span>
+                                <span class="c1"># &quot;fps&quot;: 1,</span>
+                            <span class="c1"># },</span>
+                            <span class="c1"># {</span>
+                                <span class="c1"># &quot;type&quot;: &quot;video&quot;,</span>
+                                <span class="c1"># &quot;video&quot;: str(root_directory / datapoint / &quot;camera_right_wrist.mp4&quot;),</span>
+                                <span class="c1"># &quot;fps&quot;: 1,</span>
+                            <span class="c1"># },</span>
+                            <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">custom_prompt</span><span class="p">},</span>
+                        <span class="p">],</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+
+                <span class="c1"># Preparation for inference</span>
+                <span class="n">inputs</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
+                    <span class="n">messages</span><span class="p">,</span>
+                    <span class="n">tokenize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">return_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
+                    <span class="n">fps</span><span class="o">=</span><span class="mi">2</span>
+                <span class="p">)</span>
+                <span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+                <span class="c1"># Inference: Generation of the output</span>
+                <span class="n">generated_ids</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">inputs</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">128</span><span class="p">)</span>
+                <span class="n">generated_ids_trimmed</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">out_ids</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">in_ids</span><span class="p">)</span> <span class="p">:]</span> <span class="k">for</span> <span class="n">in_ids</span><span class="p">,</span> <span class="n">out_ids</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">generated_ids</span><span class="p">)</span>
+                <span class="p">]</span>
+                <span class="n">output_text</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">batch_decode</span><span class="p">(</span>
+                    <span class="n">generated_ids_trimmed</span><span class="p">,</span> <span class="n">skip_special_tokens</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">clean_up_tokenization_spaces</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">output_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">output_text</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">tag_lists</span> <span class="o">+=</span> <span class="n">output_json</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">]</span>
+                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_failed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_json</span><span class="p">[</span><span class="s2">&quot;is_failed&quot;</span><span class="p">]</span>
+                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_labelled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_checked&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;instruction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_json</span><span class="p">[</span><span class="s2">&quot;instruction&quot;</span><span class="p">]</span>
+                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;tags&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_json</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">]</span>
+                    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;count_labelled&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">output_json</span><span class="p">[</span><span class="s2">&quot;is_failed&quot;</span><span class="p">]:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;count_failed&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Labelled </span><span class="si">{</span><span class="n">datapoint</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;datapoints&#39;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+                    <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skip </span><span class="si">{</span><span class="n">datapoint</span><span class="si">}</span><span class="s2"> as it has alreaby been labelled.&quot;</span><span class="p">)</span>
+
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">tag_lists</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]))</span>
+    <span class="n">write_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finish labelling&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="reset_label">
+<a class="viewcode-back" href="../atlp.html#atlp.reset_label">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reset_label</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Unlabelled all tracked files in header.json</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            When called, all datapoint instructions are deleted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;instruction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;tags&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_failed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_labelled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_checked&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_labelled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_failed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_checked&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">write_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All tracked filed have been set to unlabelled&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="display_instruction">
+<a class="viewcode-back" href="../atlp.html#atlp.display_instruction">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">display_instruction</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Print instruction for each datapoint</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">datapoint</span><span class="si">}</span><span class="s2"> : </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;datapoints&#39;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s1">&#39;instruction&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;This is ATLP module!&quot;</span><span class="p">)</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">ATLP  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">atlp</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Phakhawanon.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

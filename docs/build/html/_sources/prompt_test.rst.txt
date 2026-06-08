@@ -1,0 +1,7 @@
+prompt\_test module
+===================
+
+.. automodule:: prompt_test
+   :members:
+   :show-inheritance:
+   :undoc-members:

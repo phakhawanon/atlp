@@ -1,0 +1,21 @@
+atlp\_package package
+=====================
+
+Submodules
+----------
+
+atlp\_package.atlp module
+-------------------------
+
+.. automodule:: atlp_package.atlp
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: atlp_package
+   :members:
+   :show-inheritance:
+   :undoc-members:

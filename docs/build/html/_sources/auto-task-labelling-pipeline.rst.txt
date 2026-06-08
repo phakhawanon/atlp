@@ -1,0 +1,21 @@
+auto\-task\-labelling\-pipeline package
+=======================================
+
+Submodules
+----------
+
+auto\-task\-labelling\-pipeline.atlp module
+-------------------------------------------
+
+.. automodule:: auto-task-labelling-pipeline.atlp
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: auto-task-labelling-pipeline
+   :members:
+   :show-inheritance:
+   :undoc-members:

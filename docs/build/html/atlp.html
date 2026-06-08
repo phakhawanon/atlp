@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>ATLP Module &#8212; ATLP  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=2bf1fcf8" />
+    
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Todo List" href="todo.html" />
+    <link rel="prev" title="ATLP Documentation" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="todo.html" title="Todo List"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="ATLP Documentation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">ATLP  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ATLP Module</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-atlp">
+<span id="atlp-module"></span><h1>ATLP Module<a class="headerlink" href="#module-atlp" title="Link to this heading">¶</a></h1>
+<p>Summary of Automatic Task Labelling Pipeline (ATLP) Module</p>
+<p>Currently support automatic task labelling from Galbot G1 teleoperation dataset</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Datapoint is a folder inside the dataset that ends with “_record0”</p>
+<p>The datapoint folder should at least contain camera_front_head_rgb.mp4, which is the RGB video output from the Galbot G1 head camera</p>
+</div>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">atlp</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">set_root</span><span class="p">(</span><span class="n">root_to_dataset</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">populate_header</span><span class="p">()</span> <span class="c1"># Track the data in the dataset</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">list_datapoints</span><span class="p">()</span> <span class="c1"># Print all details of all datapoints</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">show_statistics</span><span class="p">()</span> <span class="c1"># See how many unlabelled datapoints are there in the dataset</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">label</span><span class="p">()</span> <span class="c1"># Label all unlabelled datapoints</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">display_instruction</span><span class="p">()</span> <span class="c1"># Print all instructions of all datapoints</span>
+</pre></div>
+</div>
+<div class="admonition-todo admonition" id="id1">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>Structure the code so it can be expanded vertically</p></li>
+<li><p>Implement trivial error handling (input type mismatch, etc) for all functions</p></li>
+</ul>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.count_datapoint_from_root">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">count_datapoint_from_root</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/atlp.html#count_datapoint_from_root"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.count_datapoint_from_root" title="Link to this definition">¶</a></dt>
+<dd><p>Return number of datapoints inside the root directory</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of datapoints currently inside the root</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.display_instruction">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">display_instruction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#display_instruction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.display_instruction" title="Link to this definition">¶</a></dt>
+<dd><p>Print instruction for each datapoint</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.generate_header">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">generate_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#generate_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.generate_header" title="Link to this definition">¶</a></dt>
+<dd><p>Generate empty header file (header.json) if the header file has not been generated yet</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.has_header">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">has_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/atlp.html#has_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.has_header" title="Link to this definition">¶</a></dt>
+<dd><p>Check if there is a header file (header.json) in the root directory</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the current root has appropriate header.json, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.label">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">label</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.label" title="Link to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>Label all tracked, unlabelled datapoints</p></li>
+<li><p>Write the result in the header file</p></li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<ul class="simple">
+<li><p>Require a lot of VRAM from Qwen3-VL-2B-Instruct</p></li>
+<li><p>Must use populate_header() first to ensure that all files are tracked</p></li>
+</ul>
+</div>
+<div class="admonition-todo admonition" id="id2">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>arbitrarily choose VLM model from inputs</p></li>
+<li><p>disable the warning while labelling</p></li>
+<li><p>enhance debugging prints</p></li>
+</ul>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.list_datapoints">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">list_datapoints</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#list_datapoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.list_datapoints" title="Link to this definition">¶</a></dt>
+<dd><p>Print out all details of each datapoint</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.load_data">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">load_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/atlp.html#load_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.load_data" title="Link to this definition">¶</a></dt>
+<dd><p>Load header.json as a dictionary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary of the header.json</p>
+</dd>
+</dl>
+<div class="admonition-todo admonition" id="id3">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>handle no header file</p></li>
+</ul>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.populate_header">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">populate_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#populate_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.populate_header" title="Link to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>Update the header file to track all datapoints inside the root directory</p></li>
+<li><p>tag_list is untounched.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.reset_label">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">reset_label</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#reset_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.reset_label" title="Link to this definition">¶</a></dt>
+<dd><p>Unlabelled all tracked files in header.json</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When called, all datapoint instructions are deleted.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.set_root">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">set_root</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#set_root"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.set_root" title="Link to this definition">¶</a></dt>
+<dd><p>Set the root path</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>root</strong> – The path to the root of the dataset</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Always use set_root(path_to_root) atleast once before working with the dataset</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.show_statistics">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">show_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_datapoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#show_statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.show_statistics" title="Link to this definition">¶</a></dt>
+<dd><p>Print out statistics of the header file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>list_datapoint</strong> – If true, all datapoint names are printed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.tag_add">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">tag_add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_tag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#tag_add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.tag_add" title="Link to this definition">¶</a></dt>
+<dd><p>Add new tag(s) to the tag_list of the header file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>new_tag</strong> – Append that string or a list of strings to the tag_list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.tag_get">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">tag_get</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="_modules/atlp.html#tag_get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.tag_get" title="Link to this definition">¶</a></dt>
+<dd><p>Return tag_list of the header file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of all tags inside the header.json</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.tag_remove">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">tag_remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#tag_remove"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.tag_remove" title="Link to this definition">¶</a></dt>
+<dd><p>Remove one tag from the tag_list of header file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tag</strong> – String of tag to be removed</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.write_data">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">write_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#write_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.write_data" title="Link to this definition">¶</a></dt>
+<dd><p>Write data to header.json</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Dictionary in .json format</p>
+</dd>
+</dl>
+<div class="admonition-todo admonition" id="id4">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>handle no header file</p></li>
+<li><p>handle invalid data input</p></li>
+</ul>
+</div>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">ATLP Module</a><ul>
+<li><a class="reference internal" href="#atlp.count_datapoint_from_root"><code class="docutils literal notranslate"><span class="pre">count_datapoint_from_root()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.display_instruction"><code class="docutils literal notranslate"><span class="pre">display_instruction()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.generate_header"><code class="docutils literal notranslate"><span class="pre">generate_header()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.has_header"><code class="docutils literal notranslate"><span class="pre">has_header()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.label"><code class="docutils literal notranslate"><span class="pre">label()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.list_datapoints"><code class="docutils literal notranslate"><span class="pre">list_datapoints()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.load_data"><code class="docutils literal notranslate"><span class="pre">load_data()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.populate_header"><code class="docutils literal notranslate"><span class="pre">populate_header()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.reset_label"><code class="docutils literal notranslate"><span class="pre">reset_label()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.set_root"><code class="docutils literal notranslate"><span class="pre">set_root()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.show_statistics"><code class="docutils literal notranslate"><span class="pre">show_statistics()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.tag_add"><code class="docutils literal notranslate"><span class="pre">tag_add()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.tag_get"><code class="docutils literal notranslate"><span class="pre">tag_get()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.tag_remove"><code class="docutils literal notranslate"><span class="pre">tag_remove()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.write_data"><code class="docutils literal notranslate"><span class="pre">write_data()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="index.html"
+                          title="previous chapter">ATLP Documentation</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="todo.html"
+                          title="next chapter">Todo List</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/atlp.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="todo.html" title="Todo List"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="ATLP Documentation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">ATLP  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ATLP Module</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Phakhawanon.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

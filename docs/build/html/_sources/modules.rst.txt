@@ -1,0 +1,7 @@
+auto-task-labelling-pipeline
+============================
+
+.. toctree::
+   :maxdepth: 4
+
+   atlp
