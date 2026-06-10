@@ -70,6 +70,12 @@
 </ul>
 </div>
 <dl class="py function">
+<dt class="sig sig-object py" id="atlp.append_new_fields">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">append_new_fields</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#append_new_fields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.append_new_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Update the header file to include all fields inside field_values for each datapoint</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="atlp.count_datapoint_from_root">
 <span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">count_datapoint_from_root</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/atlp.html#count_datapoint_from_root"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.count_datapoint_from_root" title="Link to this definition">¶</a></dt>
 <dd><p>Return number of datapoints inside the root directory</p>
@@ -82,7 +88,7 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="atlp.display_instruction">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">display_instruction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#display_instruction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.display_instruction" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">display_instruction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">from_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#display_instruction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.display_instruction" title="Link to this definition">¶</a></dt>
 <dd><p>Print instruction for each datapoint</p>
 </dd></dl>
 
@@ -90,6 +96,12 @@
 <dt class="sig sig-object py" id="atlp.generate_header">
 <span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">generate_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#generate_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.generate_header" title="Link to this definition">¶</a></dt>
 <dd><p>Generate empty header file (header.json) if the header file has not been generated yet</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.get_datapoint">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">get_datapoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">motions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/atlp.html#get_datapoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.get_datapoint" title="Link to this definition">¶</a></dt>
+<dd><p>Safely get the data from the specified datapoint</p>
 </dd></dl>
 
 <dl class="py function">
@@ -129,8 +141,14 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="atlp.list_datapoints">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">list_datapoints</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#list_datapoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.list_datapoints" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">list_datapoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">from_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#list_datapoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.list_datapoints" title="Link to this definition">¶</a></dt>
 <dd><p>Print out all details of each datapoint</p>
+<div class="admonition-todo admonition" id="id3">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>modify or retire this function</p></li>
+</ul>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -142,10 +160,35 @@
 <dd class="field-odd"><p>Dictionary of the header.json</p>
 </dd>
 </dl>
-<div class="admonition-todo admonition" id="id3">
+<div class="admonition-todo admonition" id="id4">
 <p class="admonition-title">Todo</p>
 <ul class="simple">
 <li><p>handle no header file</p></li>
+</ul>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.modify_datapoint">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">modify_datapoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">motions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_add</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_vision</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_motion</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_all</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modify_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/atlp.html#modify_datapoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.modify_datapoint" title="Link to this definition">¶</a></dt>
+<dd><p>Add new datapoint or modify existing tracked datapoint either from header.json or the given dict</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>datapoint</strong></p></li>
+<li><p><strong>false_add</strong></p></li>
+<li><p><strong>use_dict</strong></p></li>
+<li><p><strong>reset_label</strong></p></li>
+<li><p><strong>reset_all</strong></p></li>
+<li><p><strong>options</strong></p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition-todo admonition" id="id5">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>update global dataset statistics</p></li>
+<li><p>update this documentation</p></li>
 </ul>
 </div>
 </dd></dl>
@@ -160,13 +203,24 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.reset_label">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">reset_label</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#reset_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.reset_label" title="Link to this definition">¶</a></dt>
-<dd><p>Unlabelled all tracked files in header.json</p>
+<dt class="sig sig-object py" id="atlp.reset_all">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">reset_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">modify_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#reset_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.reset_all" title="Link to this definition">¶</a></dt>
+<dd><p>Reset every value of every fields of all datapoints to their default values</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>modify_actual</strong></p>
+</dd>
+</dl>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>When called, all datapoint instructions are deleted.</p>
+<p>When called, all datapoint information is deleted.</p>
 </div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.set_enable_actual_field">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">set_enable_actual_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_enable_actual_field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#set_enable_actual_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.set_enable_actual_field" title="Link to this definition">¶</a></dt>
+<dd><p>Change enable_actual_field</p>
 </dd></dl>
 
 <dl class="py function">
@@ -226,6 +280,18 @@
 <dd class="field-odd"><p><strong>tag</strong> – String of tag to be removed</p>
 </dd>
 </dl>
+<div class="admonition-todo admonition" id="id6">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>Recursively remove the tag from all datapoints in the header file</p></li>
+</ul>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.update_statistics">
+<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">update_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/atlp.html#update_statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.update_statistics" title="Link to this definition">¶</a></dt>
+<dd><p>Update the statistics of the header.json or the given dict</p>
 </dd></dl>
 
 <dl class="py function">
@@ -237,7 +303,7 @@
 <dd class="field-odd"><p><strong>data</strong> – Dictionary in .json format</p>
 </dd>
 </dl>
-<div class="admonition-todo admonition" id="id4">
+<div class="admonition-todo admonition" id="id7">
 <p class="admonition-title">Todo</p>
 <ul class="simple">
 <li><p>handle no header file</p></li>
@@ -259,20 +325,25 @@
     <h3><a href="index.html">Table of Contents</a></h3>
     <ul>
 <li><a class="reference internal" href="#">ATLP Module</a><ul>
+<li><a class="reference internal" href="#atlp.append_new_fields"><code class="docutils literal notranslate"><span class="pre">append_new_fields()</span></code></a></li>
 <li><a class="reference internal" href="#atlp.count_datapoint_from_root"><code class="docutils literal notranslate"><span class="pre">count_datapoint_from_root()</span></code></a></li>
 <li><a class="reference internal" href="#atlp.display_instruction"><code class="docutils literal notranslate"><span class="pre">display_instruction()</span></code></a></li>
 <li><a class="reference internal" href="#atlp.generate_header"><code class="docutils literal notranslate"><span class="pre">generate_header()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.get_datapoint"><code class="docutils literal notranslate"><span class="pre">get_datapoint()</span></code></a></li>
 <li><a class="reference internal" href="#atlp.has_header"><code class="docutils literal notranslate"><span class="pre">has_header()</span></code></a></li>
 <li><a class="reference internal" href="#atlp.label"><code class="docutils literal notranslate"><span class="pre">label()</span></code></a></li>
 <li><a class="reference internal" href="#atlp.list_datapoints"><code class="docutils literal notranslate"><span class="pre">list_datapoints()</span></code></a></li>
 <li><a class="reference internal" href="#atlp.load_data"><code class="docutils literal notranslate"><span class="pre">load_data()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.modify_datapoint"><code class="docutils literal notranslate"><span class="pre">modify_datapoint()</span></code></a></li>
 <li><a class="reference internal" href="#atlp.populate_header"><code class="docutils literal notranslate"><span class="pre">populate_header()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.reset_label"><code class="docutils literal notranslate"><span class="pre">reset_label()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.reset_all"><code class="docutils literal notranslate"><span class="pre">reset_all()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.set_enable_actual_field"><code class="docutils literal notranslate"><span class="pre">set_enable_actual_field()</span></code></a></li>
 <li><a class="reference internal" href="#atlp.set_root"><code class="docutils literal notranslate"><span class="pre">set_root()</span></code></a></li>
 <li><a class="reference internal" href="#atlp.show_statistics"><code class="docutils literal notranslate"><span class="pre">show_statistics()</span></code></a></li>
 <li><a class="reference internal" href="#atlp.tag_add"><code class="docutils literal notranslate"><span class="pre">tag_add()</span></code></a></li>
 <li><a class="reference internal" href="#atlp.tag_get"><code class="docutils literal notranslate"><span class="pre">tag_get()</span></code></a></li>
 <li><a class="reference internal" href="#atlp.tag_remove"><code class="docutils literal notranslate"><span class="pre">tag_remove()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.update_statistics"><code class="docutils literal notranslate"><span class="pre">update_statistics()</span></code></a></li>
 <li><a class="reference internal" href="#atlp.write_data"><code class="docutils literal notranslate"><span class="pre">write_data()</span></code></a></li>
 </ul>
 </li>

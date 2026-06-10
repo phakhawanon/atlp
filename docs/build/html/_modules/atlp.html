@@ -62,6 +62,7 @@
 
 <span class="c1"># Automatic Task Labelling Pipeline (ATLP)</span>
 <span class="c1"># Assume that nothing can altered the established header.json</span>
+<span class="c1"># Extend atlp to cover model:, actual:</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
@@ -79,6 +80,9 @@
 <span class="c1"># The tuple of endings that will be treated as a datapoint</span>
 <span class="n">datapoint_ending</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;_record0&quot;</span><span class="p">)</span>
 
+<span class="c1"># Set to true to enable collecting actual fields</span>
+<span class="n">enable_actual_field</span> <span class="o">=</span> <span class="kc">False</span>
+
 <span class="c1"># The list of default tags</span>
 <span class="n">default_tag_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Pick and Place&quot;</span><span class="p">,</span> <span class="s2">&quot;Pouring&quot;</span><span class="p">]</span>
 
@@ -90,6 +94,533 @@
 <span class="c1">#     &quot;tag_remove&quot;</span>
 <span class="c1"># ]</span>
 
+
+<span class="c1"># Define values of the datapoint</span>
+<span class="c1"># field_values = {</span>
+<span class="c1">#     &quot;instruction&quot;: [str],</span>
+<span class="c1">#     &quot;tags&quot;: [list],</span>
+<span class="c1">#     &quot;is_failed&quot;: [False, True],</span>
+<span class="c1">#     &quot;is_labelled&quot;: [False, True], # True if this has been labelled by the model</span>
+<span class="c1">#     &quot;is_checked&quot;: [False, True],</span>
+<span class="c1">#     &quot;motion_smoothness&quot;: [int],</span>
+<span class="c1">#     &quot;motion_is_joint_violate&quot;: [None, False, True],</span>
+<span class="c1">#     &quot;motion_is_self_collide&quot;: [None, False, True],</span>
+
+<span class="c1">#     &quot;actual_instruction&quot;: [str],    </span>
+<span class="c1">#     &quot;actual_tags&quot;: [list],</span>
+<span class="c1">#     &quot;actual_motion_smoothness&quot;: [None, &quot;Smooth&quot;, &quot;Rough&quot;],</span>
+<span class="c1">#     &quot;actual_is_joint_violate&quot;: [None, False, True],</span>
+<span class="c1">#     &quot;actual_is_self_collide&quot;: [None, False, True],</span>
+<span class="c1">#     # &quot;score&quot;: [int]</span>
+<span class="c1"># }</span>
+
+<span class="n">label_field_values</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;instruction&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">list</span><span class="p">],</span>
+    <span class="s2">&quot;is_failed&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">],</span>
+<span class="p">}</span>
+
+<span class="n">vision_field_values</span> <span class="o">=</span> <span class="p">{</span>
+    
+<span class="p">}</span>
+
+<span class="n">motion_field_values</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;smoothness&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="s2">&quot;is_joint_violate&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">],</span>
+    <span class="s2">&quot;is_self_collide&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">],</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="append_new_fields">
+<a class="viewcode-back" href="../atlp.html#atlp.append_new_fields">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">append_new_fields</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the header file to include all fields inside field_values for each datapoint</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
+
+        <span class="n">modify_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">enable_actual_field</span><span class="p">:</span> <span class="n">modify_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">modify_actual</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">write_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+        
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_default_field_value</span><span class="p">(</span><span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field_values</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal function</span>
+
+<span class="sd">        Return the default value for the given field from the given field_values dict</span>
+
+<span class="sd">        Do nothing if the given field is not in the field_values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">field_values</span><span class="p">:</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot get default value: field </span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2"> is not in </span><span class="si">{</span><span class="n">field_values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span>
+
+    <span class="n">default_value</span> <span class="o">=</span> <span class="n">field_values</span><span class="p">[</span><span class="n">field</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    
+    <span class="k">if</span> <span class="n">default_value</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span> <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">elif</span> <span class="n">default_value</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span> <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">elif</span> <span class="n">default_value</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span> <span class="k">return</span> <span class="n">default_value</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_valid_field_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field_values</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal function</span>
+
+<span class="sd">        Return True if the given value is the valid value of the given field from the given field_values.</span>
+
+<span class="sd">        Return None if the given field is not inside the given field_values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">field_values</span><span class="p">:</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">default_value</span> <span class="o">=</span> <span class="n">field_values</span><span class="p">[</span><span class="n">field</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">default_value</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span> <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">default_value</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">field_values</span><span class="p">[</span><span class="n">field</span><span class="p">]:</span> <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span> <span class="k">return</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="set_enable_actual_field">
+<a class="viewcode-back" href="../atlp.html#atlp.set_enable_actual_field">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_enable_actual_field</span><span class="p">(</span><span class="n">_enable_actual_field</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Change enable_actual_field</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">enable_actual_field</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_enable_actual_field</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span> <span class="n">enable_actual_field</span> <span class="o">=</span> <span class="n">_enable_actual_field</span></div>
+
+
+<div class="viewcode-block" id="get_datapoint">
+<a class="viewcode-back" href="../atlp.html#atlp.get_datapoint">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_datapoint</span><span class="p">(</span>
+    <span class="n">datapoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">from_actual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">use_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+    <span class="n">visions</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+    <span class="n">motions</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Safely get the data from the specified datapoint</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">return_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">return_labels</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">return_visions</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">return_motions</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    
+    <span class="c1"># Load data</span>
+    <span class="n">is_from_header</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">use_dict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+        <span class="n">is_from_header</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">use_dict</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Check if there is &quot;actual&quot;</span>
+    <span class="k">if</span> <span class="n">from_actual</span> <span class="ow">and</span> <span class="s2">&quot;actual&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">]:</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Datapoint </span><span class="si">{</span><span class="n">datapoint</span><span class="si">}</span><span class="s2"> does not have actual fields&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">from_actual</span><span class="p">:</span> <span class="n">data_to_retrieve</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span> <span class="n">data_to_retrieve</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;actual&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Get the values</span>
+    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">label_field_values</span><span class="p">:</span> <span class="n">return_labels</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_to_retrieve</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">][</span><span class="n">label</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid label field name: Field &#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39; does not exist.&quot;</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">vision</span> <span class="ow">in</span> <span class="n">visions</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">vision</span> <span class="ow">in</span> <span class="n">vision_field_values</span><span class="p">:</span> <span class="n">return_visions</span><span class="p">[</span><span class="n">vision</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_to_retrieve</span><span class="p">[</span><span class="s2">&quot;vision&quot;</span><span class="p">][</span><span class="n">vision</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid vision field name: Field &#39;</span><span class="si">{</span><span class="n">vision</span><span class="si">}</span><span class="s2">&#39; does not exist.&quot;</span><span class="p">)</span>    
+    
+    <span class="k">for</span> <span class="n">motion</span> <span class="ow">in</span> <span class="n">motions</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">motion</span> <span class="ow">in</span> <span class="n">motion_field_values</span><span class="p">:</span> <span class="n">return_motions</span><span class="p">[</span><span class="n">motion</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_to_retrieve</span><span class="p">[</span><span class="s2">&quot;motion&quot;</span><span class="p">][</span><span class="n">motion</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid motion field name: Field &#39;</span><span class="si">{</span><span class="n">motion</span><span class="si">}</span><span class="s2">&#39; does not exist.&quot;</span><span class="p">)</span>
+
+    <span class="n">return_dict</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">return_labels</span>
+    <span class="n">return_dict</span><span class="p">[</span><span class="s2">&quot;vision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">return_visions</span>
+    <span class="n">return_dict</span><span class="p">[</span><span class="s2">&quot;motion&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">return_motions</span>
+
+    <span class="k">return</span> <span class="n">return_dict</span>    </div>
+
+
+<div class="viewcode-block" id="modify_datapoint">
+<a class="viewcode-back" href="../atlp.html#atlp.modify_datapoint">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">modify_datapoint</span><span class="p">(</span>
+    <span class="n">datapoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">use_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+    <span class="n">visions</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+    <span class="n">motions</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+    <span class="n">force_add</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">reset_label</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">reset_vision</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">reset_motion</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">reset_all</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">modify_actual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add new datapoint or modify existing tracked datapoint either from header.json or the given dict</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datapoint:</span>
+<span class="sd">            false_add:</span>
+<span class="sd">            use_dict:</span>
+<span class="sd">            reset_label:</span>
+<span class="sd">            reset_all:</span>
+<span class="sd">            options:</span>
+
+<span class="sd">        .. todo::</span>
+<span class="sd">            - update global dataset statistics</span>
+<span class="sd">            - update this documentation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">reset_all</span><span class="p">:</span>
+        <span class="n">reset_label</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">reset_vision</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">reset_motion</span> <span class="o">=</span> <span class="kc">True</span>
+
+
+    <span class="c1"># Load data</span>
+    <span class="n">is_from_header</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">use_dict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+        <span class="n">is_from_header</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">use_dict</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Handle new datapoint</span>
+    <span class="k">if</span> <span class="n">datapoint</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
+
+        <span class="k">if</span> <span class="n">force_add</span><span class="p">:</span>
+
+            <span class="n">main_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">enable_actual_field</span><span class="p">:</span>
+
+                <span class="n">main_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;actual&quot;</span><span class="p">)</span>
+                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(),</span> <span class="s2">&quot;actual&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">()}</span>
+
+            <span class="k">else</span><span class="p">:</span>
+
+                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">()}</span>
+
+            <span class="k">for</span> <span class="n">main_field</span> <span class="ow">in</span> <span class="n">main_fields</span><span class="p">:</span>
+
+                <span class="n">_data_to_modify</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="n">main_field</span><span class="p">]</span>
+            
+                <span class="n">_data_to_modify</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="n">_data_to_modify</span><span class="p">[</span><span class="s2">&quot;vision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="n">_data_to_modify</span><span class="p">[</span><span class="s2">&quot;motion&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+                <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">label_field_values</span><span class="p">:</span>
+
+                    <span class="n">_data_to_modify</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">][</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_default_field_value</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">label_field_values</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">vision_field_values</span><span class="p">:</span>
+
+                    <span class="n">_data_to_modify</span><span class="p">[</span><span class="s2">&quot;vision&quot;</span><span class="p">][</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_default_field_value</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">vision_field_values</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">motion_field_values</span><span class="p">:</span>
+
+                    <span class="n">_data_to_modify</span><span class="p">[</span><span class="s2">&quot;motion&quot;</span><span class="p">][</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_default_field_value</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">motion_field_values</span><span class="p">)</span>
+                
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cannot add the new datapoint. Use force_add=True to forcibly add this datapoint.&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="nb">dict</span><span class="p">()</span>
+    
+    <span class="c1"># Handle enable_actual_field</span>
+    <span class="k">if</span> <span class="n">enable_actual_field</span> <span class="ow">and</span> <span class="n">modify_actual</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="s2">&quot;actual&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">]:</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;actual&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(),</span> <span class="s2">&quot;vision&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(),</span> <span class="s2">&quot;motion&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">()}</span>
+        <span class="n">data_to_modify</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;actual&quot;</span><span class="p">]</span>
+
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">modify_actual</span><span class="p">:</span>
+
+        <span class="n">data_to_modify</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Modifying actual fields are not possible: enable_actual_field is set to False&quot;</span><span class="p">)</span>        
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">()</span>
+        
+    <span class="c1"># Add values to the datapoint</span>
+    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
+        <span class="n">is_valid_value</span> <span class="o">=</span> <span class="n">_is_valid_field_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">label_field_values</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">is_valid_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid label field name: Field &#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39; does not exist.&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">is_valid_value</span><span class="p">:</span> <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">][</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid label field value: Field &#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39; does not have value &#39;</span><span class="si">{</span><span class="n">labels</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">vision</span> <span class="ow">in</span> <span class="n">visions</span><span class="p">:</span>
+        
+        <span class="n">value</span> <span class="o">=</span> <span class="n">visions</span><span class="p">[</span><span class="n">vision</span><span class="p">]</span>
+        <span class="n">is_valid_value</span> <span class="o">=</span> <span class="n">_is_valid_field_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">vision</span><span class="p">,</span> <span class="n">vision_field_values</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">is_valid_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid vision field name: Field &#39;</span><span class="si">{</span><span class="n">vision</span><span class="si">}</span><span class="s2">&#39; does not exist.&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">is_valid_value</span><span class="p">:</span> <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;vision&quot;</span><span class="p">][</span><span class="n">vision</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid vision field value: Field &#39;</span><span class="si">{</span><span class="n">vision</span><span class="si">}</span><span class="s2">&#39; does not have value &#39;</span><span class="si">{</span><span class="n">visions</span><span class="p">[</span><span class="n">vision</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">motion</span> <span class="ow">in</span> <span class="n">motions</span><span class="p">:</span>
+                
+        <span class="n">value</span> <span class="o">=</span> <span class="n">motions</span><span class="p">[</span><span class="n">motion</span><span class="p">]</span>
+        <span class="n">is_valid_value</span> <span class="o">=</span> <span class="n">_is_valid_field_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">motion</span><span class="p">,</span> <span class="n">motion_field_values</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">is_valid_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid motion field name: Field &#39;</span><span class="si">{</span><span class="n">motion</span><span class="si">}</span><span class="s2">&#39; does not exist.&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">is_valid_value</span><span class="p">:</span> <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;motion&quot;</span><span class="p">][</span><span class="n">motion</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid motion field value: Field &#39;</span><span class="si">{</span><span class="n">motion</span><span class="si">}</span><span class="s2">&#39; does not have value &#39;</span><span class="si">{</span><span class="n">motions</span><span class="p">[</span><span class="n">motion</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Handle missing fields</span>
+    <span class="c1"># Handle resets</span>
+    <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">label_field_values</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">reset_label</span> <span class="ow">or</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]:</span>
+
+            <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">][</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_default_field_value</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">label_field_values</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">vision_field_values</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">reset_vision</span> <span class="ow">or</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;vision&quot;</span><span class="p">]:</span>
+
+            <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;vision&quot;</span><span class="p">][</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_default_field_value</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">vision_field_values</span><span class="p">)</span>
+
+    
+    <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">motion_field_values</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">reset_motion</span> <span class="ow">or</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;motion&quot;</span><span class="p">]:</span>
+
+            <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;motion&quot;</span><span class="p">][</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_default_field_value</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">motion_field_values</span><span class="p">)</span>
+
+
+
+    <span class="c1"># Handle obsolete fields</span>
+
+    <span class="c1"># label</span>
+    <span class="n">delete_fields</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">data_field</span> <span class="ow">in</span> <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]:</span>
+
+        <span class="k">if</span> <span class="n">data_field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">label_field_values</span><span class="p">:</span> <span class="n">delete_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_field</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">data_field</span> <span class="ow">in</span> <span class="n">delete_fields</span><span class="p">:</span> <span class="k">del</span> <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">][</span><span class="n">data_field</span><span class="p">]</span>
+
+    <span class="c1"># vision</span>
+    <span class="n">delete_fields</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">data_field</span> <span class="ow">in</span> <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;vision&quot;</span><span class="p">]:</span>
+
+        <span class="k">if</span> <span class="n">data_field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vision_field_values</span><span class="p">:</span> <span class="n">delete_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_field</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">data_field</span> <span class="ow">in</span> <span class="n">delete_fields</span><span class="p">:</span> <span class="k">del</span> <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;vision&quot;</span><span class="p">][</span><span class="n">data_field</span><span class="p">]</span>
+
+    <span class="c1"># motion</span>
+    <span class="n">delete_fields</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">data_field</span> <span class="ow">in</span> <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;motion&quot;</span><span class="p">]:</span>
+
+        <span class="k">if</span> <span class="n">data_field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">motion_field_values</span><span class="p">:</span> <span class="n">delete_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_field</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">data_field</span> <span class="ow">in</span> <span class="n">delete_fields</span><span class="p">:</span> <span class="k">del</span> <span class="n">data_to_modify</span><span class="p">[</span><span class="s2">&quot;motion&quot;</span><span class="p">][</span><span class="n">data_field</span><span class="p">]</span>
+
+
+    <span class="c1"># Write data</span>
+    <span class="k">if</span> <span class="n">modify_actual</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;actual&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_to_modify</span>
+    <span class="k">else</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_to_modify</span>
+
+    <span class="c1"># Write/return data</span>
+    <span class="k">if</span> <span class="n">is_from_header</span><span class="p">:</span>
+
+        <span class="n">write_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="k">return</span> <span class="n">data</span>    </div>
+
+
+    <span class="c1"># # OBSOLETE Handle new datapoint</span>
+    <span class="c1"># if datapoint not in data[&quot;datapoints&quot;] or reset_label:</span>
+
+    <span class="c1">#     if force_add or reset_label:</span>
+            
+    <span class="c1">#         data[&quot;datapoints&quot;][datapoint] = dict()</span>
+
+    <span class="c1">#         for field in field_values:</span>
+
+    <span class="c1">#             if field.startswith(&quot;actual_&quot;) and not reset_all:</span>
+
+    <span class="c1">#                 pass</span>
+
+    <span class="c1">#             else:</span>
+
+    <span class="c1">#                 if field_values[field][0] is str:</span>
+
+    <span class="c1">#                     write_value = &quot;&quot;</span>
+
+    <span class="c1">#                 elif field_values[field][0] is list:</span>
+
+    <span class="c1">#                     write_value = []</span>
+
+    <span class="c1">#                 elif field_values[field][0] is int:</span>
+
+    <span class="c1">#                     write_value = 0</span>
+
+    <span class="c1">#                 else:</span>
+
+    <span class="c1">#                     write_value = field_values[field][0]</span>
+        
+    <span class="c1">#                 data[&quot;datapoints&quot;][datapoint][field] = write_value</span>
+
+    <span class="c1">#     else:</span>
+
+    <span class="c1">#         print(&quot;Cannot add the new datapoint. Use force_add=True to forcibly add this datapoint.&quot;)</span>
+
+    <span class="c1">#         return dict()</span>
+
+    <span class="c1"># # OBSOLETE Add values into the specified fields</span>
+    <span class="c1"># for option in options:</span>
+
+    <span class="c1">#     if option in field_values:</span>
+        
+    <span class="c1">#         if options[option] not in field_values[option] and not isinstance(options[option], field_values[option][0]):</span>
+
+    <span class="c1">#             print(f&quot;Invalid field value: Field &#39;{option}&#39; does not has value &#39;{options[option]}&#39;&quot;)</span>
+
+    <span class="c1">#         else:</span>
+
+    <span class="c1">#             data[&quot;datapoints&quot;][datapoint][option] = options[option]</span>
+
+    <span class="c1">#     else:</span>
+
+    <span class="c1">#         print(f&quot;Invalid field name: Field &#39;{option}&#39; does not exists.&quot;)</span>
+
+    <span class="c1"># # OBSOLETE Handle missing fields</span>
+    <span class="c1"># for field in field_values:</span>
+
+    <span class="c1">#     if field not in data[&quot;datapoints&quot;][datapoint]:</span>
+
+    <span class="c1">#         if field_values[field][0] is str:</span>
+
+    <span class="c1">#             write_value = &quot;&quot;</span>
+
+    <span class="c1">#         elif field_values[field][0] is list:</span>
+
+    <span class="c1">#             write_value = []</span>
+
+    <span class="c1">#         elif field_values[field][0] is int:</span>
+
+    <span class="c1">#             write_value = 0</span>
+
+    <span class="c1">#         else:</span>
+
+    <span class="c1">#             write_value = field_values[field][0]</span>
+    
+    <span class="c1">#         data[&quot;datapoints&quot;][datapoint][field] = write_value</span>
+
+    <span class="c1"># # OBSOLETE Handle obsolete fields</span>
+    <span class="c1"># delete_fields = list()</span>
+    
+    <span class="c1"># for data_field in data[&quot;datapoints&quot;][datapoint]:</span>
+
+    <span class="c1">#     if data_field not in field_values:</span>
+
+    <span class="c1">#         delete_fields.append(data_field)</span>
+
+    <span class="c1"># for data_field in delete_fields:</span>
+                
+    <span class="c1">#     del data[&quot;datapoints&quot;][datapoint][data_field]</span>
+
+
+
+
+
+
+
+
+
+        
+<span class="c1"># To be safely retired     </span>
+<div class="viewcode-block" id="update_statistics">
+<a class="viewcode-back" href="../atlp.html#atlp.update_statistics">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">update_statistics</span><span class="p">(</span><span class="n">use_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="nb">dict</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the statistics of the header.json or the given dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># Load data</span>
+    <span class="n">is_from_header</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">use_dict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+        <span class="n">is_from_header</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">use_dict</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">count_datapoint</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># count_labelled = 0</span>
+    <span class="c1"># count_failed = 0</span>
+    <span class="c1"># count_checked = 0</span>
+    <span class="n">tag_list</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
+
+        <span class="n">count_datapoint</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># if data[&quot;datapoints&quot;][datapoint][&quot;is_labelled&quot;]: count_labelled += 1</span>
+        <span class="c1"># if data[&quot;datapoints&quot;][datapoint][&quot;is_failed&quot;]: count_failed += 1</span>
+        <span class="c1"># if data[&quot;datapoints&quot;][datapoint][&quot;is_checked&quot;]: count_checked += 1</span>
+
+        <span class="n">tag_list</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;model&quot;</span><span class="p">][</span><span class="s2">&quot;label&quot;</span><span class="p">][</span><span class="s2">&quot;tags&quot;</span><span class="p">]</span>
+        <span class="n">tag_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">tag_list</span><span class="p">))</span>
+
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_datapoint&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">count_datapoint</span>
+    <span class="c1"># data[&quot;count_labelled&quot;] = count_labelled</span>
+    <span class="c1"># data[&quot;count_failed&quot;] = count_failed</span>
+    <span class="c1"># data[&quot;count_checked&quot;] = count_checked</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tag_list</span>
+    
+    <span class="c1"># Write/return data</span>
+    <span class="k">if</span> <span class="n">is_from_header</span><span class="p">:</span>
+
+        <span class="n">write_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+   
 <div class="viewcode-block" id="load_data">
 <a class="viewcode-back" href="../atlp.html#atlp.load_data">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
@@ -198,9 +729,9 @@
 
     <span class="n">header_content</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;count_datapoint&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s2">&quot;count_labelled&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s2">&quot;count_failed&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s2">&quot;count_checked&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="c1"># &quot;count_labelled&quot;: 0,</span>
+        <span class="c1"># &quot;count_failed&quot;: 0,</span>
+        <span class="c1"># &quot;count_checked&quot;: 0,</span>
         <span class="s2">&quot;tag_list&quot;</span><span class="p">:</span> <span class="n">default_tag_list</span><span class="p">,</span>
         <span class="s2">&quot;datapoints&quot;</span><span class="p">:</span> <span class="p">{}</span>
     <span class="p">}</span>
@@ -238,12 +769,15 @@
     <span class="c1"># Ensure that header file is generated</span>
     <span class="n">generate_header</span><span class="p">()</span>
 
+    <span class="c1"># update_statistics()</span>
+    <span class="n">append_new_fields</span><span class="p">()</span>
+
     <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
 
     <span class="n">count_datapoint</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_datapoint&quot;</span><span class="p">]</span>
-    <span class="n">count_labelled</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_labelled&quot;</span><span class="p">]</span>
-    <span class="n">count_failed</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_failed&quot;</span><span class="p">]</span>
-    <span class="n">count_checked</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_checked&quot;</span><span class="p">]</span>
+    <span class="c1"># count_labelled = data[&quot;count_labelled&quot;]</span>
+    <span class="c1"># count_failed = data[&quot;count_failed&quot;]</span>
+    <span class="c1"># count_checked = data[&quot;count_checked&quot;]</span>
 
     <span class="n">deleted_datapoints</span> <span class="o">=</span> <span class="p">[]</span>
         
@@ -255,9 +789,9 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">datapoint_path</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
 
             <span class="n">count_datapoint</span> <span class="o">-=</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_failed&quot;</span><span class="p">]:</span> <span class="n">count_failed</span> <span class="o">-=</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_labelled&quot;</span><span class="p">]:</span> <span class="n">count_labelled</span> <span class="o">-=</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_checked&quot;</span><span class="p">]:</span> <span class="n">count_checked</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="c1"># if data[&quot;datapoints&quot;][datapoint][&quot;is_failed&quot;]: count_failed -= 1</span>
+            <span class="c1"># if data[&quot;datapoints&quot;][datapoint][&quot;is_labelled&quot;]: count_labelled -= 1</span>
+            <span class="c1"># if data[&quot;datapoints&quot;][datapoint][&quot;is_checked&quot;]: count_checked -= 1</span>
             <span class="n">deleted_datapoints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datapoint</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">deleted_datapoints</span><span class="p">:</span>
@@ -271,19 +805,20 @@
 
             <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">datapoint_ending</span><span class="p">)</span> <span class="ow">and</span> <span class="n">entry</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
 
-                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="s2">&quot;instruction&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[],</span>
-                    <span class="s2">&quot;is_failed&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                    <span class="s2">&quot;is_labelled&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                    <span class="s2">&quot;is_checked&quot;</span><span class="p">:</span> <span class="kc">False</span>
-                <span class="p">}</span>
+                <span class="c1"># data[&quot;datapoints&quot;][entry.name] = {</span>
+                <span class="c1">#     &quot;instruction&quot;: &quot;&quot;,</span>
+                <span class="c1">#     &quot;tags&quot;: [],</span>
+                <span class="c1">#     &quot;is_failed&quot;: False,</span>
+                <span class="c1">#     &quot;is_labelled&quot;: False,</span>
+                <span class="c1">#     &quot;is_checked&quot;: False</span>
+                <span class="c1"># }</span>
+                <span class="n">modify_datapoint</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">force_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="n">count_datapoint</span> <span class="o">+=</span> <span class="mi">1</span>
                 
     <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_datapoint&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">count_datapoint</span>
-    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_labelled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">count_labelled</span>
-    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_failed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">count_failed</span>
-    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_checked&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">count_checked</span>
+    <span class="c1"># data[&quot;count_labelled&quot;] = count_labelled</span>
+    <span class="c1"># data[&quot;count_failed&quot;] = count_failed</span>
+    <span class="c1"># data[&quot;count_checked&quot;] = count_checked</span>
     
     <span class="n">write_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
 
@@ -343,6 +878,9 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            tag: String of tag to be removed</span>
+
+<span class="sd">        .. todo::</span>
+<span class="sd">            - Recursively remove the tag from all datapoints in the header file</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
@@ -362,13 +900,15 @@
 <span class="sd">        Args:</span>
 <span class="sd">            list_datapoint: If true, all datapoint names are printed.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">update_statistics</span><span class="p">()</span>
+    <span class="n">append_new_fields</span><span class="p">()</span>
 
     <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Statistics for dataset </span><span class="si">{</span><span class="n">root_directory</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;count_datapoint: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;count_datapoint&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;count_labelled: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;count_labelled&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;count_failed: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;count_failed&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>    
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;count_checkedt: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;count_checked&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># print(f&quot;count_labelled: {data[&#39;count_labelled&#39;]}&quot;)</span>
+    <span class="c1"># print(f&quot;count_failed: {data[&#39;count_failed&#39;]}&quot;)    </span>
+    <span class="c1"># print(f&quot;count_checked: {data[&#39;count_checked&#39;]}&quot;)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;tag_list: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;tag_list&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">list_datapoint</span><span class="p">:</span>
@@ -380,10 +920,15 @@
 
 <div class="viewcode-block" id="list_datapoints">
 <a class="viewcode-back" href="../atlp.html#atlp.list_datapoints">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">list_datapoints</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_datapoints</span><span class="p">(</span><span class="n">from_actual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Print out all details of each datapoint</span>
+
+<span class="sd">        .. todo::</span>
+<span class="sd">            - modify or retire this function</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">update_statistics</span><span class="p">()</span>
+    <span class="n">append_new_fields</span><span class="p">()</span>
 
     <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
     <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">])</span>
@@ -419,14 +964,15 @@
 
     <span class="n">processor</span> <span class="o">=</span> <span class="n">AutoProcessor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_name</span><span class="p">)</span>
 
-
     <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
 
     <span class="n">tag_lists</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span>
 
     <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_labelled&quot;</span><span class="p">]:</span>
+        <span class="n">instruction</span> <span class="o">=</span> <span class="n">get_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;instruction&quot;</span><span class="p">])[</span><span class="s2">&quot;label&quot;</span><span class="p">][</span><span class="s2">&quot;instruction&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">instruction</span><span class="p">:</span>
 
             <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
             
@@ -482,15 +1028,17 @@
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">output_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">output_text</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
                     <span class="n">tag_lists</span> <span class="o">+=</span> <span class="n">output_json</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">]</span>
-                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_failed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_json</span><span class="p">[</span><span class="s2">&quot;is_failed&quot;</span><span class="p">]</span>
-                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_labelled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_checked&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;instruction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_json</span><span class="p">[</span><span class="s2">&quot;instruction&quot;</span><span class="p">]</span>
-                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;tags&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_json</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">]</span>
-                    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;count_labelled&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-                    <span class="k">if</span> <span class="n">output_json</span><span class="p">[</span><span class="s2">&quot;is_failed&quot;</span><span class="p">]:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;count_failed&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">modify_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">output_json</span><span class="p">)</span>
+                    <span class="c1"># modify_datapoint(datapoint, use_dict=data, is_failed=output_json[&quot;is_failed&quot;], is_labelled=True, is_checked=False, instruction=output_json[&quot;instruction&quot;], tags=output_json[&quot;tags&quot;])</span>
+                    <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;is_failed&quot;] = output_json[&quot;is_failed&quot;]</span>
+                    <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;is_labelled&quot;] = True</span>
+                    <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;is_checked&quot;] = False</span>
+                    <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;instruction&quot;] = output_json[&quot;instruction&quot;]</span>
+                    <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;tags&quot;] = output_json[&quot;tags&quot;]</span>
+                    <span class="c1"># data[&#39;count_labelled&#39;] += 1</span>
+                    <span class="c1"># if output_json[&quot;is_failed&quot;]: data[&#39;count_failed&#39;] += 1</span>
                     <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Labelled </span><span class="si">{</span><span class="n">datapoint</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;datapoints&#39;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Labelled </span><span class="si">{</span><span class="n">datapoint</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="n">get_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span><span class="w"> </span><span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;instruction&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;tags&#39;</span><span class="p">,</span><span class="s1">&#39;is_failed&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
                     <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">else</span><span class="p">:</span>
@@ -503,28 +1051,32 @@
 
 
 
-<div class="viewcode-block" id="reset_label">
-<a class="viewcode-back" href="../atlp.html#atlp.reset_label">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">reset_label</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="reset_all">
+<a class="viewcode-back" href="../atlp.html#atlp.reset_all">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reset_all</span><span class="p">(</span><span class="n">modify_actual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Unlabelled all tracked files in header.json</span>
+<span class="sd">        Reset every value of every fields of all datapoints to their default values</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            modify_actual:</span>
+<span class="sd">                    </span>
 <span class="sd">        Warning:</span>
-<span class="sd">            When called, all datapoint instructions are deleted.</span>
+<span class="sd">            When called, all datapoint information is deleted.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
 
     <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
-        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;instruction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;tags&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_failed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_labelled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s2">&quot;is_checked&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">modify_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">reset_all</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">modify_actual</span><span class="o">=</span><span class="n">modify_actual</span><span class="p">)</span>
+        <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;instruction&quot;] = &quot;&quot;</span>
+        <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;tags&quot;] = []</span>
+        <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;is_failed&quot;] = False</span>
+        <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;is_labelled&quot;] = False</span>
+        <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;is_checked&quot;] = False</span>
 
-    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_labelled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_failed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count_checked&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># data[&quot;count_labelled&quot;] = 0</span>
+    <span class="c1"># data[&quot;count_failed&quot;] = 0</span>
+    <span class="c1"># data[&quot;count_checked&quot;] = 0</span>
     <span class="n">write_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All tracked filed have been set to unlabelled&quot;</span><span class="p">)</span></div>
 
@@ -532,7 +1084,7 @@
 
 <div class="viewcode-block" id="display_instruction">
 <a class="viewcode-back" href="../atlp.html#atlp.display_instruction">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">display_instruction</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">display_instruction</span><span class="p">(</span><span class="n">from_actual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Print instruction for each datapoint</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -540,7 +1092,10 @@
     <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
 
     <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">datapoint</span><span class="si">}</span><span class="s2"> : </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;datapoints&#39;</span><span class="p">][</span><span class="n">datapoint</span><span class="p">][</span><span class="s1">&#39;instruction&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+        <span class="n">instruction</span> <span class="o">=</span> <span class="n">get_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="n">from_actual</span><span class="o">=</span><span class="n">from_actual</span><span class="p">,</span> <span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;instruction&#39;</span><span class="p">])</span><span class="c1">#[&#39;label&#39;][&#39;instruction&#39;]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instruction</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">datapoint</span><span class="si">}</span><span class="s2"> : </span><span class="si">{</span><span class="n">instruction</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">][</span><span class="s1">&#39;instruction&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
