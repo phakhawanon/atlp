@@ -52,6 +52,224 @@ header_path = root_directory / "header.json"
 #     "tag_remove"
 # ]
 
+
+# Define values of the datapoint
+field_values = {
+    "instruction": [str],
+    "tags": [list],
+    "is_failed": [False, True],
+    "is_labelled": [False, True], # True if this has been labelled by the model
+    "is_checked": [False, True],
+    "motion_smoothness": [int],
+    "motion_is_joint_violate": [None, False, True],
+    "motion_is_self_collide": [None, False, True],
+
+    "actual_instruction": [str],    
+    "actual_tags": [list],
+    "actual_motion_smoothness": [None, "Smooth", "Rough"],
+    "actual_is_joint_violate": [None, False, True],
+    "actual_is_self_collide": [None, False, True],
+    # "score": [int]
+}
+
+def append_new_fields() -> None:
+    """
+        Update the header file to include all fields inside field_values for each datapoint
+    """
+
+    data = load_data()
+
+    for datapoint in data["datapoints"]:
+
+        modify_datapoint(datapoint)
+
+        
+
+
+def modify_datapoint(datapoint: str, force_add: bool=False, use_dict: dict=dict(), reset_label: bool=False, reset_all: bool=False, **options) -> dict:
+    """
+        Add new datapoint or modify existing tracked datapoint either from header.json or the given dict
+
+        Args:
+            datapoint:
+            false_add:
+            use_dict:
+            reset_label:
+            reset_all:
+            options:
+
+        .. todo::
+            - update global dataset statistics
+    """
+
+    if reset_all: reset_label = True
+
+    # Load data
+    is_from_header = False
+
+    if len(use_dict) == 0:
+
+        data = load_data()
+        is_from_header = True
+
+    else:
+
+        data = use_dict.copy()
+
+    # Handle new datapoint
+    if datapoint not in data["datapoints"] or reset_label:
+
+        if force_add or reset_label:
+            
+            data["datapoints"][datapoint] = dict()
+
+            for field in field_values:
+
+                if field.startswith("actual_") and not reset_all:
+
+                    pass
+
+                else:
+
+                    if field_values[field][0] is str:
+
+                        write_value = ""
+
+                    elif field_values[field][0] is list:
+
+                        write_value = []
+
+                    elif field_values[field][0] is int:
+
+                        write_value = 0
+
+                    else:
+
+                        write_value = field_values[field][0]
+        
+                    data["datapoints"][datapoint][field] = write_value
+
+        else:
+
+            print("Cannot add the new datapoint. Use force_add=True to forcibly add this datapoint.")
+
+            return dict()
+
+    # Add values into the specified fields
+    for option in options:
+
+        if option in field_values:
+        
+            if options[option] not in field_values[option] and not isinstance(options[option], field_values[option][0]):
+
+                print(f"Invalid field value: Field '{option}' does not has value '{options[option]}'")
+
+            else:
+
+                data["datapoints"][datapoint][option] = options[option]
+
+        else:
+
+            print(f"Invalid field name: Field '{option}' does not exists.")
+
+    # Handle missing fields
+    for field in field_values:
+
+        if field not in data["datapoints"][datapoint]:
+
+            if field_values[field][0] is str:
+
+                write_value = ""
+
+            elif field_values[field][0] is list:
+
+                write_value = []
+
+            elif field_values[field][0] is int:
+
+                write_value = 0
+
+            else:
+
+                write_value = field_values[field][0]
+    
+            data["datapoints"][datapoint][field] = write_value
+
+    # Handle obsolete fields
+    delete_fields = list()
+    
+    for data_field in data["datapoints"][datapoint]:
+
+        if data_field not in field_values:
+
+            delete_fields.append(data_field)
+
+    for data_field in delete_fields:
+                
+        del data["datapoints"][datapoint][data_field]
+        
+    # Write/return data
+    if is_from_header:
+
+        write_data(data)
+
+        return dict()
+
+    else:
+
+        return data
+      
+def update_statistics(use_dict: dict=dict()) -> dict:
+    """
+        Update the statistics of the header.json or the given dict
+    """
+    
+    # Load data
+    is_from_header = False
+
+    if len(use_dict) == 0:
+
+        data = load_data()
+        is_from_header = True
+
+    else:
+
+        data = use_dict.copy()
+
+    count_datapoint = 0
+    count_labelled = 0
+    count_failed = 0
+    count_checked = 0
+    tag_list = data["tag_list"]
+
+    for datapoint in data["datapoints"]:
+
+        count_datapoint += 1
+
+        if data["datapoints"][datapoint]["is_labelled"]: count_labelled += 1
+        if data["datapoints"][datapoint]["is_failed"]: count_failed += 1
+        if data["datapoints"][datapoint]["is_checked"]: count_checked += 1
+
+        tag_list += data["datapoints"][datapoint]["tags"]
+        tag_list = list(set(tag_list))
+
+    data["count_datapoint"] = count_datapoint
+    data["count_labelled"] = count_labelled
+    data["count_failed"] = count_failed
+    data["count_checked"] = count_checked
+    data["tag_list"] = tag_list
+    
+    # Write/return data
+    if is_from_header:
+
+        write_data(data)
+
+        return dict()
+
+    else:
+
+        return data
+   
 def load_data() -> dict:
     """
         Load header.json as a dictionary
@@ -180,6 +398,9 @@ def populate_header() -> None:
     # Ensure that header file is generated
     generate_header()
 
+    update_statistics()
+    append_new_fields()
+
     data = load_data()
 
     count_datapoint = data["count_datapoint"]
@@ -213,13 +434,14 @@ def populate_header() -> None:
 
             if entry.is_dir() and entry.name.endswith(datapoint_ending) and entry.name not in data["datapoints"]:
 
-                data["datapoints"][entry.name] = {
-                    "instruction": "",
-                    "tags": [],
-                    "is_failed": False,
-                    "is_labelled": False,
-                    "is_checked": False
-                }
+                # data["datapoints"][entry.name] = {
+                #     "instruction": "",
+                #     "tags": [],
+                #     "is_failed": False,
+                #     "is_labelled": False,
+                #     "is_checked": False
+                # }
+                modify_datapoint(entry.name, use_dict=data, force_add=True)
                 count_datapoint += 1
                 
     data["count_datapoint"] = count_datapoint
@@ -276,6 +498,9 @@ def tag_remove(tag : str) -> None:
 
         Args:
             tag: String of tag to be removed
+
+        .. todo::
+            - Recursively remove the tag from all datapoints in the header file
     """
 
     data = load_data()
@@ -292,13 +517,15 @@ def show_statistics(list_datapoint=False) -> None:
         Args:
             list_datapoint: If true, all datapoint names are printed.
     """
+    update_statistics()
+    append_new_fields()
 
     data = load_data()
     print(f"Statistics for dataset {root_directory}")
     print(f"count_datapoint: {data['count_datapoint']}")
     print(f"count_labelled: {data['count_labelled']}")
     print(f"count_failed: {data['count_failed']}")    
-    print(f"count_checkedt: {data['count_checked']}")
+    print(f"count_checked: {data['count_checked']}")
     print(f"tag_list: {data['tag_list']}")
 
     if list_datapoint:
@@ -311,6 +538,8 @@ def list_datapoints() -> None:
     """
         Print out all details of each datapoint
     """
+    update_statistics()
+    append_new_fields()
 
     data = load_data()
     df = pd.DataFrame(data["datapoints"])
@@ -342,7 +571,6 @@ def label() -> None:
     )
 
     processor = AutoProcessor.from_pretrained(model_name)
-
 
     data = load_data()
 
@@ -406,11 +634,12 @@ def label() -> None:
                 try:
                     output_json = json.loads(output_text[0])
                     tag_lists += output_json["tags"]
-                    data["datapoints"][datapoint]["is_failed"] = output_json["is_failed"]
-                    data["datapoints"][datapoint]["is_labelled"] = True
-                    data["datapoints"][datapoint]["is_checked"] = False
-                    data["datapoints"][datapoint]["instruction"] = output_json["instruction"]
-                    data["datapoints"][datapoint]["tags"] = output_json["tags"]
+                    modify_datapoint(datapoint, use_dict=data, is_failed=output_json["is_failed"], is_labelled=True, is_checked=False, instruction=output_json["instruction"], tags=output_json["tags"])
+                    # data["datapoints"][datapoint]["is_failed"] = output_json["is_failed"]
+                    # data["datapoints"][datapoint]["is_labelled"] = True
+                    # data["datapoints"][datapoint]["is_checked"] = False
+                    # data["datapoints"][datapoint]["instruction"] = output_json["instruction"]
+                    # data["datapoints"][datapoint]["tags"] = output_json["tags"]
                     data['count_labelled'] += 1
                     if output_json["is_failed"]: data['count_failed'] += 1
                     success = True
@@ -426,22 +655,26 @@ def label() -> None:
     print("Finish labelling")
 
 
-def reset_label() -> None:
+def reset_label(reset_all: bool=False) -> None:
     """
         Unlabelled all tracked files in header.json
 
+        Args:
+            reset_all: If True, reset everying, including the actual fields
+        
         Warning:
-            When called, all datapoint instructions are deleted.
+            When called with reset_all=True, all datapoint instructions are deleted.
     """
 
     data = load_data()
 
     for datapoint in data["datapoints"]:
-        data["datapoints"][datapoint]["instruction"] = ""
-        data["datapoints"][datapoint]["tags"] = []
-        data["datapoints"][datapoint]["is_failed"] = False
-        data["datapoints"][datapoint]["is_labelled"] = False
-        data["datapoints"][datapoint]["is_checked"] = False
+        modify_datapoint(datapoint, use_dict=data, reset_all=reset_all, reset_label=True)
+        # data["datapoints"][datapoint]["instruction"] = ""
+        # data["datapoints"][datapoint]["tags"] = []
+        # data["datapoints"][datapoint]["is_failed"] = False
+        # data["datapoints"][datapoint]["is_labelled"] = False
+        # data["datapoints"][datapoint]["is_checked"] = False
 
     data["count_labelled"] = 0
     data["count_failed"] = 0
