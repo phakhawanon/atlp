@@ -31,10 +31,8 @@ from pathlib import Path
 import os
 import pandas as pd
 import numpy as np
-
-# Comment these two lines if you don't want to label anything
-from transformers import AutoModelForImageTextToText, AutoProcessor
-import torch
+import linecache
+import re
 
 # Leave this empty if using in this directory
 # must end with /
@@ -92,6 +90,159 @@ motion_field_values = {
     "is_joint_violate": [None, False, True],
     "is_self_collide": [None, False, True],
 }
+
+field_to_report_name_dict = {
+    "state_body_joint_position"         :   "/body/joint_states",
+    "state_front_head_joint"            :   "/head/joint_states",
+    "state_left_arm_joint_position"     :   "/left_arm/joint_states",
+    "state_right_arm_joint_position"    :   "/right_arm/joint_states",
+    "state_left_arm_gripper_width"      :   "/left_arm_gripper/joint_states",
+    "state_right_arm_gripper_width"     :   "/right_arm_gripper/joint_states",
+    "odom"                              :   "/odom",            
+    # "leg_joints"                        :   "/body/joint_states",
+    # "head_joints"                       :   "/head/joint_states",
+    # "left_arm_joints"                   :   "/left_arm/joint_states",
+    # "right_arm_joints"                  :   "/right_arm/joint_states",
+    # "left_gripper"                      :   "/left_arm_gripper/joint_states",
+    # "right_gripper"                     :   "/right_arm_gripper/joint_states",
+}
+
+short_name_to_field_name = {        
+    "state_body_joint_position"         :   "state_body_joint_position",
+    "state_front_head_joint"            :   "state_front_head_joint",
+    "state_left_arm_joint_position"     :   "state_left_arm_joint_position",
+    "state_right_arm_joint_position"    :   "state_right_arm_joint_position",
+    "state_left_arm_gripper_width"      :   "state_left_arm_gripper_width",
+    "state_right_arm_gripper_width"     :   "state_right_arm_gripper_width",
+    "odom"                              :   "odom",            
+    "leg_joints"                        :   "state_body_joint_position",
+    "head_joints"                       :   "state_front_head_joint",
+    "left_arm_joints"                   :   "state_left_arm_joint_position",
+    "right_arm_joints"                  :   "state_right_arm_joint_position",
+    "left_gripper"                      :   "state_left_arm_gripper_width",
+    "right_gripper"                     :   "state_right_arm_gripper_width",
+    "base"                              :   "odom",
+    "odometry"                          :   "odom",
+}
+
+def get_root_directory() -> Path:
+    """
+        Return the current root directory as Path object
+    """
+    return root_directory
+
+# Find min and max timestamps from the data
+def analyze_timestamp(data):
+
+    
+    # Initialize min and max timestamps to the first element of odom
+    min_timestamp = data['data']['odom'][0]['timestamp']
+    max_timestamp = min_timestamp
+
+    fields = ['state_body_joint_position',
+              'state_front_head_joint',
+              'state_left_arm_joint_position',
+              'state_right_arm_joint_position',
+              'state_left_arm_gripper_width',
+              'state_right_arm_gripper_width',
+              'odom'
+              ]
+
+    for field in fields:
+        for item in data['data'][field]:
+            timestamp_value = item['timestamp']
+            if timestamp_value < min_timestamp:
+                min_timestamp = timestamp_value
+            if timestamp_value > max_timestamp:
+                max_timestamp = timestamp_value
+    
+    return min_timestamp, max_timestamp
+
+# Return duration of video in s
+# TODO: Fix path
+def get_video_duration(report_file_path):
+    return float(linecache.getline(report_file_path,2).split(' ')[2])
+
+def get_field_message_count(field, report_file_path):
+
+    field_report_name = field_to_report_name_dict[field]
+
+    with open(report_file_path) as f:
+        for i, line in enumerate(f, start=1):
+            line_list = re.split(r'\s+', line.strip())
+            if len(line_list) >= 2:
+                if line_list[1] == field_report_name:
+                    return int(line_list[3])
+
+# diff = max_timestamp - min_timestamp
+# return time_array, joint_arrays, and subfields (subfield names)
+def convert_to_np_array(data, field, min_timestamp, diff, duration, report_file_path):
+    
+    if field == "state_left_arm_gripper_width": subfields = ['left_gripper']
+    elif field == "state_right_arm_gripper_width": subfields = ['right_gripper']
+    else: subfields = data['data'][field][0]['names']    
+    subfield_count = len(subfields)
+    
+    field_message_count = get_field_message_count(field, report_file_path)
+
+    # Initialize time array
+    time_array = np.ndarray((field_message_count), float)
+
+    # Initialize joint arrays
+    joint_arrays = np.ndarray((subfield_count, field_message_count), float)
+    # for i in range(0, subfield_count):
+        # joint_arrays.append(np.ndarray((field_message_count), float))
+    
+    # Populate time array and joint arrays
+    i = 0
+    for item in data['data'][field]:
+        timestamp_value = item['timestamp']
+        time_value = (timestamp_value - min_timestamp) * duration / diff 
+        
+
+        time_array[i] = time_value
+        joint_values = item['position']
+
+        for j in range(0, subfield_count):
+            joint_arrays[j, i] = joint_values[j]
+            #print(joint_values[j])
+        
+        i += 1
+
+    return time_array, joint_arrays, subfields
+
+def get_joint_states(datapoint: str, field: str):
+    """
+        Get the joint states of the datapoint as a list of np.arrays
+
+        Assume that the given datapoint exists
+    """
+    report_file_path = str(root_directory / datapoint / "report.txt")
+    file_path = root_directory / datapoint / "data.json"
+
+    if field in short_name_to_field_name: field = short_name_to_field_name[field]
+
+    else:
+
+        print(f"Invalid field name: Field {field} does not exist.")
+        return
+    
+    with open(file_path,'r') as f:
+        data = json.load(f)
+    
+    # Get min and max timestamps of the dataset
+    min_timestamp, max_timestamp = analyze_timestamp(data)
+    # print((min_timestamp, max_timestamp))
+
+    # Calculate their difference
+    diff = max_timestamp - min_timestamp
+    # print(diff)
+
+    # Get duration in s
+    duration = get_video_duration(report_file_path)
+    # print(duration)
+
+    return convert_to_np_array(data, field, min_timestamp, diff, duration, report_file_path)
 
 def append_new_fields() -> None:
     """
@@ -860,119 +1011,6 @@ def list_datapoints(from_actual: bool = False) -> None:
     df = pd.DataFrame(data["datapoints"])
     print(df.T)
 
-
-def label() -> None:
-    """
-        - Label all tracked, unlabelled datapoints
-        - Write the result in the header file
-
-        Warnings:
-            - Require a lot of VRAM from Qwen3-VL-2B-Instruct
-            - Must use populate_header() first to ensure that all files are tracked
-            
-        .. todo::
-            - arbitrarily choose VLM model from inputs
-            - disable the warning while labelling
-            - enhance debugging prints
-    """
-
-    model_name = "Qwen/Qwen3-VL-2B-Instruct"
-    print(f"Start labelling with model {model_name} on path {root_directory}")
-
-    # default: Load the model on the available device(s)
-    model = AutoModelForImageTextToText.from_pretrained(
-        model_name, dtype="auto", device_map="auto",
-        #attn_implementation="flash_attention_2"
-    )
-
-    processor = AutoProcessor.from_pretrained(model_name)
-
-    data = load_data()
-
-    tag_lists = data["tag_list"]
-
-    for datapoint in data["datapoints"]:
-
-        instruction = get_datapoint(datapoint, use_dict=data, labels=["instruction"])["label"]["instruction"]
-
-        if not instruction:
-
-            success = False
-            
-            while not success:
-
-                custom_prompt = "You are Galbot G1’s instruction labeller. The robot is instructed to perform a certain task. You are given one RGB videos from the robot’s head camera, while the robot is performing the task. You must determine the instruction given to the robot based on the three videos you have received. The task instruction must be a complete sentence. You must also determine the tags for each task. This tag represents the skill the robot needs to perform the task. There may be more than one tags that can represent the task, but please strictly stick to one tag per task unless the task is complex. Please examine and use the list of the current tags first. If the current tags do not describe the task well, create the new tag. The videos that you have given might sometimes be a failed attempt or incomplete tasks from the teleoperation process. You must also identify if the videos you have been given are the failed or incomplete tasks, which are characterized by hand manipulations with no object involved. Output the result as the .json format. Specify instruction: (string), the tags (list of strings), and is_failed: (boolean). Current tag lists: " + str(tag_lists)
-
-                # Messages containing a video url(or a local path) and a text query
-                messages = [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "video",
-                                "video": str(root_directory / datapoint / "camera_front_head_rgb.mp4"),
-                                "fps": 2,
-                            },
-                            # {
-                                # "type": "video",
-                                # "video": str(root_directory / datapoint / "camera_left_wrist.mp4"),
-                                # "fps": 1,
-                            # },
-                            # {
-                                # "type": "video",
-                                # "video": str(root_directory / datapoint / "camera_right_wrist.mp4"),
-                                # "fps": 1,
-                            # },
-                            {"type": "text", "text": custom_prompt},
-                        ],
-                    }
-                ]
-
-                # Preparation for inference
-                inputs = processor.apply_chat_template(
-                    messages,
-                    tokenize=True,
-                    add_generation_prompt=True,
-                    return_dict=True,
-                    return_tensors="pt",
-                    fps=2
-                )
-                inputs = inputs.to(model.device)
-
-                # Inference: Generation of the output
-                generated_ids = model.generate(**inputs, max_new_tokens=128)
-                generated_ids_trimmed = [
-                    out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
-                ]
-                output_text = processor.batch_decode(
-                    generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
-                )
-
-                try:
-                    output_json = json.loads(output_text[0])
-                    tag_lists += output_json["tags"]
-                    modify_datapoint(datapoint, use_dict=data, labels=output_json)
-                    # modify_datapoint(datapoint, use_dict=data, is_failed=output_json["is_failed"], is_labelled=True, is_checked=False, instruction=output_json["instruction"], tags=output_json["tags"])
-                    # data["datapoints"][datapoint]["is_failed"] = output_json["is_failed"]
-                    # data["datapoints"][datapoint]["is_labelled"] = True
-                    # data["datapoints"][datapoint]["is_checked"] = False
-                    # data["datapoints"][datapoint]["instruction"] = output_json["instruction"]
-                    # data["datapoints"][datapoint]["tags"] = output_json["tags"]
-                    # data['count_labelled'] += 1
-                    # if output_json["is_failed"]: data['count_failed'] += 1
-                    success = True
-                    print(f"Labelled {datapoint} with {get_datapoint(datapoint, use_dict=data, labels=['instruction', 'tags','is_failed'])}")
-                except json.JSONDecodeError:
-                    success = False
-        else:
-            print(f"Skip {datapoint} as it has alreaby been labelled.")
-
-    data["tag_list"] += tag_lists
-    data["tag_list"] = list(set(data["tag_list"]))
-    write_data(data)
-    print("Finish labelling")
-
-
 def reset_all(modify_actual: bool = False) -> None:
     """
         Reset every value of every fields of all datapoints to their default values
@@ -1013,64 +1051,6 @@ def display_instruction(from_actual: bool = False) -> None:
         instruction = get_datapoint(datapoint, from_actual=from_actual, use_dict=data, labels=['instruction'])#['label']['instruction']
 
         if len(instruction) != 0: print(f"{datapoint} : {instruction['label']['instruction']}")
-
-def evaluate_tag() -> np.array:
-    """
-        Evaluate the accuracy of the ATLP by returning the confusion matrix
-
-        Currently, only consider
-            - datapoints that have been labelled by the model (indicated by non-empty 'model'/'label'/'instruction' field)
-            - datapoints whose 'actual'/'label'/'tags' has only one tag
-
-        Do nothing if enable_actual_field is False
-    """
-
-    if not enable_actual_field: return
-
-    data = load_data()
-    n = 0
-    # tag_list = data["tag_list"]
-    actual_tag_list = data["actual_tag_list"]
-    confusion_size = ( len(actual_tag_list)+1, len(actual_tag_list) )
-    confusion = np.zeros(confusion_size, float)
-
-    for datapoint in data["datapoints"]:
-
-        tags = get_datapoint(datapoint, use_dict=data, labels=["tags"])["label"]["tags"]
-        actual_tags_request = get_datapoint(datapoint, from_actual=True, use_dict=data, labels=["tags"])
-        # print(actual_tags_request)
-
-        if len(actual_tags_request) != 0:
-
-            actual_tags = actual_tags_request["label"]["tags"]
-            # print(actual_tags)
-            
-            if len(actual_tags) == 1:
-
-                n += 1
-
-                actual_tag = actual_tags[0]
-                actual_tag_index = actual_tag_list.index(actual_tag)
-
-                if len(tags) == 1:
-
-                    tag = tags[0]
-
-                    if tag in actual_tag_list:
-                        
-                        tag_index = actual_tag_list.index(tag)
-                        confusion[tag_index, actual_tag_index] += 1
-
-                    else:
-
-                        confusion[len(actual_tag_list), actual_tag_index] += 1
-
-                else: confusion[len(actual_tag_list), actual_tag_index] += 1
-
-        # print(confusion)
-        # print(n)
-            
-    return confusion / n
 
 if __name__ == "__main__":
     print("This is ATLP module!")

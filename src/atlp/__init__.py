@@ -1,4 +1,4 @@
-from .atlp import (
+from .interface import (
     display_instruction,
     set_root,
     populate_header,
@@ -6,15 +6,22 @@ from .atlp import (
     list_datapoints,
     modify_datapoint,
     get_datapoint,
-    label,
     reset_all,
     set_enable_actual_field,
-    evaluate_tag,
     tag_get,
+    get_joint_states,
+    get_root_directory,
+)
+
+from .label import (
+    label,
 )
 
 from .visualizer import (
-    get_joint_states,
     plot_joint_states,
+)
+
+from .evaluation import (
+    evaluate_tag,
 )
 
