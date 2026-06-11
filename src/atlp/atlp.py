@@ -30,6 +30,7 @@ import json
 from pathlib import Path
 import os
 import pandas as pd
+import numpy as np
 
 # Comment these two lines if you don't want to label anything
 from transformers import AutoModelForImageTextToText, AutoProcessor
@@ -43,7 +44,7 @@ root_directory = Path(".").expanduser()
 datapoint_ending = ("_record0")
 
 # Set to true to enable collecting actual fields
-enable_actual_field = False
+enable_actual_field = True
 
 # The list of default tags
 default_tag_list = ["Pick and Place", "Pouring"]
@@ -171,16 +172,20 @@ def get_datapoint(
     return_motions = dict()
     
     # Load data
-    is_from_header = False
-
     if len(use_dict) == 0:
 
         data = load_data()
-        is_from_header = True
 
     else:
 
         data = use_dict.copy()
+
+    # Handle invalid datapoint name
+    if datapoint not in data["datapoints"]:
+
+        print(f"Cannot find datapoint: {datapoint} does not exist.")
+        
+        return dict()
 
     # Check if there is "actual"
     if from_actual and "actual" not in data["datapoints"][datapoint]:
@@ -539,6 +544,7 @@ def update_statistics(use_dict: dict=dict()) -> dict:
     # count_failed = 0
     # count_checked = 0
     tag_list = data["tag_list"]
+    actual_tag_list = []
 
     for datapoint in data["datapoints"]:
 
@@ -551,11 +557,17 @@ def update_statistics(use_dict: dict=dict()) -> dict:
         tag_list += data["datapoints"][datapoint]["model"]["label"]["tags"]
         tag_list = list(set(tag_list))
 
+        if enable_actual_field:
+            
+            actual_tag_list += data["datapoints"][datapoint]["actual"]["label"]["tags"]
+            actual_tag_list = list(set(actual_tag_list))
+
     data["count_datapoint"] = count_datapoint
     # data["count_labelled"] = count_labelled
     # data["count_failed"] = count_failed
     # data["count_checked"] = count_checked
     data["tag_list"] = tag_list
+    data["actual_tag_list"] = actual_tag_list
     
     # Write/return data
     if is_from_header:
@@ -636,7 +648,7 @@ def has_header() -> bool:
     # Check if the content is .json
     try:
 
-        data = load_data()
+        load_data()
 
     except json.JSONDecodeError:
 
@@ -666,7 +678,8 @@ def generate_header() -> None:
         # "count_failed": 0,
         # "count_checked": 0,
         "tag_list": default_tag_list,
-        "datapoints": {}
+        "actual_tag_list": [],
+        "datapoints": {},
     }
 
     write_data(header_content)
@@ -825,7 +838,8 @@ def show_statistics(list_datapoint=False) -> None:
     # print(f"count_failed: {data['count_failed']}")    
     # print(f"count_checked: {data['count_checked']}")
     print(f"tag_list: {data['tag_list']}")
-
+    print(f"actual_tag_list: {data['actual_tag_list']}")
+    
     if list_datapoint:
         print("List of Datapoints:")
         for datapoint in data["datapoints"]:
@@ -1000,13 +1014,63 @@ def display_instruction(from_actual: bool = False) -> None:
 
         if len(instruction) != 0: print(f"{datapoint} : {instruction['label']['instruction']}")
 
-def evaluate_tag():
+def evaluate_tag() -> np.array:
     """
         Evaluate the accuracy of the ATLP by returning the confusion matrix
+
+        Currently, only consider
+            - datapoints that have been labelled by the model (indicated by non-empty 'model'/'label'/'instruction' field)
+            - datapoints whose 'actual'/'label'/'tags' has only one tag
+
+        Do nothing if enable_actual_field is False
     """
 
-    pass
+    if not enable_actual_field: return
 
+    data = load_data()
+    n = 0
+    # tag_list = data["tag_list"]
+    actual_tag_list = data["actual_tag_list"]
+    confusion_size = ( len(actual_tag_list)+1, len(actual_tag_list) )
+    confusion = np.zeros(confusion_size, float)
+
+    for datapoint in data["datapoints"]:
+
+        tags = get_datapoint(datapoint, use_dict=data, labels=["tags"])["label"]["tags"]
+        actual_tags_request = get_datapoint(datapoint, from_actual=True, use_dict=data, labels=["tags"])
+        # print(actual_tags_request)
+
+        if len(actual_tags_request) != 0:
+
+            actual_tags = actual_tags_request["label"]["tags"]
+            # print(actual_tags)
+            
+            if len(actual_tags) == 1:
+
+                n += 1
+
+                actual_tag = actual_tags[0]
+                actual_tag_index = actual_tag_list.index(actual_tag)
+
+                if len(tags) == 1:
+
+                    tag = tags[0]
+
+                    if tag in actual_tag_list:
+                        
+                        tag_index = actual_tag_list.index(tag)
+                        confusion[tag_index, actual_tag_index] += 1
+
+                    else:
+
+                        confusion[len(actual_tag_list), actual_tag_index] += 1
+
+                else: confusion[len(actual_tag_list), actual_tag_index] += 1
+
+        # print(confusion)
+        # print(n)
+            
+    return confusion / n
 
 if __name__ == "__main__":
     print("This is ATLP module!")

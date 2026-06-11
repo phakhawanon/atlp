@@ -3,3 +3,5 @@ test-files/
 docs/source/
 .ipynb_checkpoints
 header.json
+src/atlp/meshes
+src/atlp/*.xml
