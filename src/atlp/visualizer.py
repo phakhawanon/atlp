@@ -1,5 +1,7 @@
 from .motion import (
     joint_lim_dict,        
+    mjcf_path,
+    _build_q,
 )
 
 
@@ -8,13 +10,11 @@ import pinocchio as pin
 import numpy as np
 from pathlib import Path
 from pinocchio.visualize import MeshcatVisualizer
-import meshcat
 import time
 
 # file_path = 'data.json'
 # report_file_path = 'report.txt'
 
-mjcf_path = Path("~/auto-task-labelling-pipeline/src/atlp/galbot_one_golf_collision_only.xml").expanduser()
 _SIMULATION_STEP_SIZE = 50
 
 def plot_joint_states(time_array, joint_arrays, subfields, quantity):
@@ -71,44 +71,12 @@ def plot_joint_states(time_array, joint_arrays, subfields, quantity):
 
 #     plot_field("state_right_arm_joint_position", min_timestamp, diff, duration)
 
-def _get_idx(model, joint_name):
-    """
-        Return index of the joint name from the given pinocchio model
-    """
-    return model.joints[model.getJointId(joint_name)].idx_q
-
-def _build_q(model, all_joint_arrays, t):
-    """
-        Populate the model with the all_joint_arrays at time t
-    """
-
-    q = pin.neutral(model)
-    
-    q[0:7] = all_joint_arrays[0:7, t]
-    
-    for i, name in enumerate([f'leg_joint{j}' for j in range(1,5)]):
-        q[_get_idx(model, name)] = all_joint_arrays[21+i, t]
-    
-    for i, name in enumerate([f'head_joint{j}' for j in range(1,3)]):
-        q[_get_idx(model, name)] = all_joint_arrays[25+i, t]
-    
-    for i, name in enumerate([f'left_arm_joint{j}' for j in range(1,8)]):
-        q[_get_idx(model, name)] = all_joint_arrays[7+i, t]
-    
-    for i, name in enumerate([f'right_arm_joint{j}' for j in range(1,8)]):
-        q[_get_idx(model, name)] = all_joint_arrays[14+i, t]
-
-    q[_get_idx(model, "left_gripper_joint")] = all_joint_arrays[27, t]
-    q[_get_idx(model, "right_gripper_joint")] = all_joint_arrays[28, t]
-
-    return q
-
 def simulate_joint_arrays(all_time_array, all_joint_arrays, time_step: int = _SIMULATION_STEP_SIZE):
     """
         Open the browser and 3D simulate the given robot pose
     """
     model, _, collision_model, visual_model = pin.buildModelsFromMJCF(mjcf_path)
-    data = model.createData()
+    model.createData()
 
     viz = MeshcatVisualizer(model, collision_model, visual_model)
     viz.initViewer(open=True)        # opens browser tab automatically

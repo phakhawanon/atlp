@@ -27,3 +27,6 @@ from .evaluation import (
     evaluate_tag,
 )
 
+from .motion import (
+    is_self_collision,       
+)

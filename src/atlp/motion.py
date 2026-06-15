@@ -1,4 +1,11 @@
+import pinocchio as pin
+import numpy as np
+from pathlib import Path
 
+# file_path = 'data.json'
+# report_file_path = 'report.txt'
+
+mjcf_path = Path("~/auto-task-labelling-pipeline/src/atlp/galbot_one_golf_collision_only.xml").expanduser()
 
 # left_gripper and right_gripper do not appear in data.json,
 # but are made by convert_to_np_array for convenience 
@@ -28,9 +35,75 @@ joint_lim_dict = {
     "right_gripper"     :   (0.0, 1.703)
     }
 
+def _get_idx(model, joint_name):
+    """
+        Return index of the joint name from the given pinocchio model
+    """
+    return model.joints[model.getJointId(joint_name)].idx_q
+
+def _build_q(model, all_joint_arrays, t):
+    """
+        Populate the model with the all_joint_arrays at time t
+    """
+
+    q = pin.neutral(model)
+    
+    q[0:7] = all_joint_arrays[0:7, t]
+    
+    for i, name in enumerate([f'leg_joint{j}' for j in range(1,5)]):
+        q[_get_idx(model, name)] = all_joint_arrays[21+i, t]
+    
+    for i, name in enumerate([f'head_joint{j}' for j in range(1,3)]):
+        q[_get_idx(model, name)] = all_joint_arrays[25+i, t]
+    
+    for i, name in enumerate([f'left_arm_joint{j}' for j in range(1,8)]):
+        q[_get_idx(model, name)] = all_joint_arrays[7+i, t]
+    
+    for i, name in enumerate([f'right_arm_joint{j}' for j in range(1,8)]):
+        q[_get_idx(model, name)] = all_joint_arrays[14+i, t]
+
+    q[_get_idx(model, "left_gripper_joint")] = all_joint_arrays[27, t]
+    q[_get_idx(model, "right_gripper_joint")] = all_joint_arrays[28, t]
+
+    return q
+
+    
 def is_self_collision(all_joint_arrays):
     """
         Determine whether the given all_joint_arrays has any self collision or not.
         Does not update the value inside the header file
     """
-    pass
+    model, _, collision_model, visual_model = pin.buildModelsFromMJCF(mjcf_path)
+    data           = model.createData()
+    collision_data = collision_model.createData()
+
+    # Without SRDF, remove adjacent pairs manually:
+    for pair in collision_model.collisionPairs:
+        geom1 = collision_model.geometryObjects[pair.first]
+        geom2 = collision_model.geometryObjects[pair.second]
+        # Remove if they share a parent joint (adjacent)
+        if geom1.parentJoint == geom2.parentJoint:
+            collision_model.removeCollisionPair(pair)
+
+    n = all_joint_arrays.shape[1]
+    is_collision = False
+
+    for req in collision_data.collisionRequests:
+        req.security_margin = 1  # applies to all pairs
+
+    for t in range(0, n):
+
+        q = _build_q(model, all_joint_arrays, t)
+
+        pin.forwardKinematics(model, data, q)
+        pin.updateGeometryPlacements(model, data, collision_model, collision_data)
+
+        # 2. Check all pairs
+        is_collision = pin.computeCollisions(
+            model, data, collision_model, collision_data, q,
+            stop_at_first_collision=True   # True = faster, stops early
+        )
+
+        if is_collision: return True
+
+    return False
