@@ -176,11 +176,16 @@ def get_field_message_count(field, report_file_path):
 
 # diff = max_timestamp - min_timestamp
 # return time_array, joint_arrays, and subfields (subfield names)
-def convert_to_np_array(data, field, min_timestamp, diff, duration, report_file_path):
+def convert_to_np_array(data, field, min_timestamp, diff, duration, report_file_path, quantity:str = "position"):
     
     if field == "state_left_arm_gripper_width": subfields = ['left_gripper']
     elif field == "state_right_arm_gripper_width": subfields = ['right_gripper']
+    elif field == "odom":
+        if quantity == "position": subfields = ['x', 'y', 'z', 'qx', 'qy', 'qz', 'qw']
+        elif quantity == "velocity": subfields = ['vx', 'vy', 'vz', 'wx', 'wy', 'wz']
+        else: raise ValueError(f"For field odom, quantity {quantity} is invalid.")
     else: subfields = data['data'][field][0]['names']    
+
     subfield_count = len(subfields)
     
     field_message_count = get_field_message_count(field, report_file_path)
@@ -195,23 +200,57 @@ def convert_to_np_array(data, field, min_timestamp, diff, duration, report_file_
     
     # Populate time array and joint arrays
     i = 0
-    for item in data['data'][field]:
-        timestamp_value = item['timestamp']
-        time_value = (timestamp_value - min_timestamp) * duration / diff 
+
+    if field == "odom":
+
+        if quantity == "position": odom_field = "pose"
+        elif quantity == "velocity": odom_field = "twist"
+            
+        for item in data['data'][field]:
+
+            timestamp_value = item['timestamp']
+            time_value = (timestamp_value - min_timestamp) * duration / diff
+            time_array[i] = time_value
+
+            if quantity == "position":
+
+                joint_arrays[0, i] = item['data'][odom_field]["position"]["x"]
+                joint_arrays[1, i] = item['data'][odom_field]["position"]["y"]
+                joint_arrays[2, i] = item['data'][odom_field]["position"]["z"]
+                joint_arrays[3, i] = item['data'][odom_field]["orientation"]["x"]
+                joint_arrays[4, i] = item['data'][odom_field]["orientation"]["y"]
+                joint_arrays[5, i] = item['data'][odom_field]["orientation"]["z"]
+                joint_arrays[6, i] = item['data'][odom_field]["orientation"]["w"]
+
+            else:
+                
+                joint_arrays[0, i] = item['data'][odom_field]["linear"]["x"]
+                joint_arrays[1, i] = item['data'][odom_field]["linear"]["y"]
+                joint_arrays[2, i] = item['data'][odom_field]["linear"]["z"]
+                joint_arrays[3, i] = item['data'][odom_field]["angular"]["x"]
+                joint_arrays[4, i] = item['data'][odom_field]["angular"]["y"]
+                joint_arrays[5, i] = item['data'][odom_field]["angular"]["z"]
+
+            i += 1
+
+    else:
         
+        for item in data['data'][field]:
+            
+            timestamp_value = item['timestamp']
+            time_value = (timestamp_value - min_timestamp) * duration / diff 
+            time_array[i] = time_value
+            joint_values = item[quantity]
 
-        time_array[i] = time_value
-        joint_values = item['position']
-
-        for j in range(0, subfield_count):
-            joint_arrays[j, i] = joint_values[j]
-            #print(joint_values[j])
+            for j in range(0, subfield_count):
+                joint_arrays[j, i] = joint_values[j]
+                #print(joint_values[j])
         
-        i += 1
+            i += 1
 
-    return time_array, joint_arrays, subfields
+    return time_array, joint_arrays, subfields, quantity
 
-def get_joint_states(datapoint: str, field: str):
+def get_joint_states(datapoint: str, field: str, quantity: str = "position"):
     """
         Get the joint states of the datapoint as a list of np.arrays
 
@@ -220,13 +259,29 @@ def get_joint_states(datapoint: str, field: str):
     report_file_path = str(root_directory / datapoint / "report.txt")
     file_path = root_directory / datapoint / "data.json"
 
+    # Handle aliases and invalid names
     if field in short_name_to_field_name: field = short_name_to_field_name[field]
 
     else:
 
         print(f"Invalid field name: Field {field} does not exist.")
         return
-    
+
+    if quantity not in ['position', 'velocity', 'effort']:
+
+        print(f"Invalid quantity. Quantity {quantity} does not exist.")
+        return
+
+    if field == "odom" and quantity not in ['position', 'velocity']:
+
+        print(f"Invalid quantity for field odom. Quantity {quantity} does not exist.")
+        return
+
+    if field in ['state_left_arm_gripper_width', 'state_right_arm_gripper_width'] and quantity != "position":
+
+        print(f"Invalid quantity for field {field}. Quantity {quantity} does not exist.")
+        return
+
     with open(file_path,'r') as f:
         data = json.load(f)
     
@@ -242,7 +297,135 @@ def get_joint_states(datapoint: str, field: str):
     duration = get_video_duration(report_file_path)
     # print(duration)
 
-    return convert_to_np_array(data, field, min_timestamp, diff, duration, report_file_path)
+    return convert_to_np_array(data, field, min_timestamp, diff, duration, report_file_path, quantity=quantity)
+
+def _linear_interpolation(ideal_time_array, time_array, joint_arrays):
+    """
+        Internal function
+
+        .. todo::
+            - Handle low j
+    """
+    array_width = time_array.shape[0]
+    ideal_array_width = ideal_time_array.shape[0]
+    interpolated_size = (joint_arrays.shape[0], ideal_array_width)
+    interpolated_joint_arrays = np.ndarray(interpolated_size, float)
+
+    for i in range(0, ideal_array_width):
+
+        j = 1
+
+        try:
+            
+            while time_array[j] < ideal_time_array[i] and j < array_width-1: j += 1
+
+        finally:
+        
+            x0 = time_array[j-1]
+            x1 = time_array[j]
+        
+            y0 = joint_arrays[:, j-1]
+            y1 = joint_arrays[:, j]
+
+            m = (y1 - y0) / (x1 - x0)
+
+        x = ideal_time_array[i]
+        y = y0 + m * (x - x0) # Element-wise multiplication                
+
+        interpolated_joint_arrays[:, i] = y
+
+    return interpolated_joint_arrays 
+
+def get_all_joint_states(datapoint:str, quantity="position", ideal_time_array: list[float]=list()):
+    """
+        Get all joint states as one large np arrays
+    """
+    if quantity == "position":
+
+        time_array_odom, joint_arrays_odom, *_ = get_joint_states(datapoint, "odom", quantity="position")
+        time_array_left_arm, joint_arrays_left_arm, *_ = get_joint_states(datapoint, "left_arm_joints", quantity="position")
+        time_array_right_arm, joint_arrays_right_arm, *_ = get_joint_states(datapoint, "right_arm_joints", quantity="position")
+        time_array_leg, joint_arrays_leg, *_ = get_joint_states(datapoint, "leg_joints", quantity="position")
+        time_array_head, joint_arrays_head, *_ = get_joint_states(datapoint, "head_joints", quantity="position")
+        time_array_left_gripper, joint_arrays_left_gripper, *_ = get_joint_states(datapoint, "left_gripper", quantity="position")
+        time_array_right_gripper, joint_arrays_right_gripper, *_ = get_joint_states(datapoint, "right_gripper", quantity="position")
+        time_array_list = [
+            time_array_odom,
+            time_array_left_arm,
+            time_array_right_arm,
+            time_array_leg,
+            time_array_head,
+            time_array_left_gripper,
+            time_array_right_gripper,
+        ]
+
+        # Finding ideal_time_array
+        if len(ideal_time_array) == 0:
+
+            max_time_array_length = len(time_array_odom)
+            ideal_time_array = time_array_odom
+
+            for time_array in time_array_list:
+
+                if len(time_array) > max_time_array_length:
+
+                    max_time_array_length = len(time_array)
+                    ideal_time_array = time_array
+
+        ideal_time_array_length = len(ideal_time_array)
+        joint_arrays = np.ndarray((29, ideal_time_array_length), float)
+
+        # Populate joint_arrays
+        joint_arrays[0:7, :] = _linear_interpolation(ideal_time_array, time_array_odom, joint_arrays_odom)
+        joint_arrays[7:14, :] = _linear_interpolation(ideal_time_array, time_array_left_arm, joint_arrays_left_arm)
+        joint_arrays[14:21, :] = _linear_interpolation(ideal_time_array, time_array_right_arm, joint_arrays_right_arm)
+        joint_arrays[21:25, :] = _linear_interpolation(ideal_time_array, time_array_leg, joint_arrays_leg)
+        joint_arrays[25:27, :] = _linear_interpolation(ideal_time_array, time_array_head, joint_arrays_head)
+        joint_arrays[27, :] = _linear_interpolation(ideal_time_array, time_array_left_gripper, joint_arrays_left_gripper)
+        joint_arrays[28, :] = _linear_interpolation(ideal_time_array, time_array_right_gripper, joint_arrays_right_gripper)
+
+        field_slicers_dict = {
+            "odom": slice(0,7),
+            "left_arm_joints": slice(7, 14),
+            "right_arm_joints": slice(14, 21),
+            "leg_joints": slice(21, 25),
+            "head_joints": slice(25, 27),
+            "left_gripper": 27,
+            "right_gripper": 28,
+        }
+
+        subfields_dict = {            
+            "odom": ['x', 'y', 'z', 'qx', 'qy', 'qz', 'qw'],
+            "left_arm_joints": [
+                'left_arm_joint1',
+                'left_arm_joint2',
+                'left_arm_joint3',
+                'left_arm_joint4',
+                'left_arm_joint5',
+                'left_arm_joint6',
+                'left_arm_joint7',
+            ],
+            "right_arm_joints": [
+                'right_arm_joint1',
+                'right_arm_joint2',
+                'right_arm_joint3',
+                'right_arm_joint4',
+                'right_arm_joint5',
+                'right_arm_joint6',
+                'right_arm_joint7',
+             ],
+            "leg_joints": ['leg_joint1', 'leg_joint2', 'leg_joint3', 'leg_joint4'],
+            "head_joints": ['head_joint1', 'head_joint2'],
+            "left_gripper": ['left_gripper'],
+            "right_gripper": ['right_gripper'],
+        }
+
+        return ideal_time_array, joint_arrays, field_slicers_dict, subfields_dict
+
+    else:
+
+        print(f"Invalid quantity. Quantity {quantity} does not exist.")
+        return
 
 def append_new_fields() -> None:
     """

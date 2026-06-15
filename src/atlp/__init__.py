@@ -11,6 +11,7 @@ from .interface import (
     tag_get,
     get_joint_states,
     get_root_directory,
+    get_all_joint_states,
 )
 
 from .label import (
@@ -19,6 +20,7 @@ from .label import (
 
 from .visualizer import (
     plot_joint_states,
+    simulate_joint_arrays,
 )
 
 from .evaluation import (

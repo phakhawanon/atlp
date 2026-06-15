@@ -7,6 +7,7 @@ joint_lim_dict = {
     "leg_joint2"        :   (0.0, 2.5847),
     "leg_joint3"        :   (0.0, 2.3262),
     "leg_joint4"        :   (-1.5906, 1.5906),
+    "leg_joint5"        :   (-0.1645, 0.1645),
     "head_joint1"       :   (-1.5208, 1.5208),
     "head_joint2"       :   (-0.2143461, 0.4935988),
     "left_arm_joint1"   :   (-3.00432619, 3.00432619),
@@ -26,3 +27,10 @@ joint_lim_dict = {
     "left_gripper"      :   (0.0, 1.703),
     "right_gripper"     :   (0.0, 1.703)
     }
+
+def is_self_collision(all_joint_arrays):
+    """
+        Determine whether the given all_joint_arrays has any self collision or not.
+        Does not update the value inside the header file
+    """
+    pass
