@@ -4,7 +4,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Any
 import os
-
+from fastapi.responses import StreamingResponse
+from fastapi import Request
 # import importlib.util
 # import sys
 import json
@@ -130,9 +131,52 @@ async def save_json(req: SaveJsonRequest):
 
 from fastapi.responses import FileResponse
 
+# @app.get("/video")
+# async def get_video(path: str):
+#     # path is the absolute path on your machine, e.g. /home/user/data/clip.mp4
+#     if not os.path.isfile(path):
+#         return {"error": f"File not found at path {path}"}
+#     return FileResponse(path, media_type="video/mp4")
+
 @app.get("/video")
-async def get_video(path: str):
-    # path is the absolute path on your machine, e.g. /home/user/data/clip.mp4
-    if not os.path.isfile(path):
-        return {"error": f"File not found at path {path}"}
-    return FileResponse(path, media_type="video/mp4")
+async def get_video(request: Request, path: str):
+    file_size = os.path.getsize(path)
+    range_header = request.headers.get("range")
+
+    def iter_file(start, end):
+        with open(path, "rb") as f:
+            f.seek(start)
+            remaining = end - start + 1
+            chunk_size = 1024 * 1024  # 1MB chunks
+            while remaining > 0:
+                data = f.read(min(chunk_size, remaining))
+                if not data:
+                    break
+                remaining -= len(data)
+                yield data
+
+    # No Range header → return full file
+    if not range_header:
+        return StreamingResponse(
+            iter_file(0, file_size - 1),
+            media_type="video/mp4",
+            headers={"Accept-Ranges": "bytes", "Content-Length": str(file_size)}
+        )
+
+    # Parse Range header
+    start, end = range_header.replace("bytes=", "").split("-")
+    start = int(start)
+    end = int(end) if end else min(start + 1024 * 1024, file_size - 1)
+
+    headers = {
+        "Content-Range": f"bytes {start}-{end}/{file_size}",
+        "Accept-Ranges": "bytes",
+        "Content-Length": str(end - start + 1),
+    }
+
+    return StreamingResponse(
+        iter_file(start, end),
+        status_code=206,
+        media_type="video/mp4",
+        headers=headers
+    )
