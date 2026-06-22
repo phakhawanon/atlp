@@ -11,6 +11,7 @@ import numpy as np
 from pathlib import Path
 from pinocchio.visualize import MeshcatVisualizer
 import time
+# import meshcat
 
 # file_path = 'data.json'
 # report_file_path = 'report.txt'
@@ -20,6 +21,12 @@ _SIMULATION_STEP_SIZE = 50
 def plot_joint_states(time_array, joint_arrays, subfields, quantity):
     """
         Plot joint states
+
+        Args:
+            time_array:
+            joint_arrays:
+            subfields:
+            quantity:
     """    
     fig, axes = plt.subplots(len(subfields), 1, sharex=True, figsize=(5, len(subfields)*2.2))
     duration = time_array[-1] - time_array[0]
@@ -78,6 +85,7 @@ def simulate_joint_arrays(all_time_array, all_joint_arrays, time_step: int = _SI
     model, _, collision_model, visual_model = pin.buildModelsFromMJCF(mjcf_path)
     model.createData()
 
+    # viewer = meshcat.Visualizer(zmq_url="tcp://127.0.0.1:6000")
     viz = MeshcatVisualizer(model, collision_model, visual_model)
     viz.initViewer(open=True)        # opens browser tab automatically
     viz.loadViewerModel()

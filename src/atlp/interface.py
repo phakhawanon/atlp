@@ -45,7 +45,7 @@ datapoint_ending = ("_record0")
 enable_actual_field = True
 
 # The list of default tags
-default_tag_list = ["Pick and Place", "Pouring"]
+default_tag_list = ["Pouring", "Failed"]
 
 header_path = root_directory / "header.json"
 
@@ -474,13 +474,27 @@ def _is_valid_field_value(value, field: str, field_values: dict):
 
     if field not in field_values:
 
-        return None
+        return None, value
 
     default_value = field_values[field][0]
 
-    if isinstance(default_value, type): return isinstance(value, default_value)
-    elif value in field_values[field]: return True
-    else: return False
+    if isinstance(default_value, type):
+        try:
+            if default_value is list:
+                value = json.loads(value)
+                print(value)
+            else:
+                value = default_value(value)
+            return isinstance(value, default_value), value
+        except Exception:
+            return False, value
+
+    if value in ["false", "False"]: value = False
+    if value in ["true", "True"]: value = True
+    if value in ["none", "None"]: value = None
+
+    if value in field_values[field]: return True, value
+    else: return False, value
 
 def set_enable_actual_field(_enable_actual_field: bool) -> None:
     """
@@ -489,6 +503,174 @@ def set_enable_actual_field(_enable_actual_field: bool) -> None:
     global enable_actual_field
     if isinstance(_enable_actual_field, bool): enable_actual_field = _enable_actual_field
 
+def _is_modelled(
+    datapoint: str,
+    use_dict: dict = dict(),
+) -> bool:
+    """
+        Determine whether the datapoint has been modelled.
+    """
+    datapoint_tags = get_single_datapoint(datapoint,
+                                          main_field="label",
+                                          field="tags",
+                                          use_dict=use_dict,
+                                          )
+    if len(datapoint_tags) == 0: return False
+    return True
+
+def _is_checked(
+    datapoint: str,
+    use_dict: dict = dict(),
+) -> bool:
+    """
+        Determine whether the datapoint has been manually checked
+    """
+    datapoint_tags = get_single_datapoint(datapoint,
+                                          main_field="label",
+                                          field="tags",
+                                          use_dict=use_dict,
+                                          from_actual=True,
+                                          )
+    if len(datapoint_tags) == 0: return False
+    return True
+
+def get_single_datapoint(
+    datapoint: str,
+    main_field: str,
+    field: str,
+    from_actual: bool = False,
+    use_dict: dict = dict(),
+):
+    if main_field not in ["label", "vision", "motion"]:
+        raise ValueError(f"Invalid main field. There is no {main_field}.")
+
+    is_invalid_field = False
+
+    if main_field == "label" and field not in label_field_values: is_invalid_field = True
+    elif main_field == "vision" and field not in vision_field_values: is_invalid_field = True
+    elif main_field == "motion" and field not in motion_field_values: is_invalid_field = True
+
+    if is_invalid_field:
+        raise ValueError(f"Invalid field. There is no {field} in {main_field}")
+
+    labels = []
+    visions = []
+    motions = []
+
+    if main_field == "label": labels = [field]
+    elif main_field == "vision": visions = [field]
+    elif main_field == "motion": motions = [field]
+
+    data_from_get_datapoint = get_datapoint(datapoint,
+                                            from_actual=from_actual,
+                                            use_dict=use_dict,
+                                            labels=labels,
+                                            visions=visions,
+                                            motions=motions,    
+                                            )
+    wanted_data = data_from_get_datapoint[main_field][field]
+    return wanted_data
+
+def filter(
+  use_dict: dict = dict(),
+  is_checked = None,
+  is_modelled = None,
+  # is_inconsistent = None,
+  model_tag = None,
+  actual_tag = None,
+  model_is_failed = None,
+  actual_is_failed = None,  
+):
+    if len(use_dict)==0: data=load_data()
+    else: data=use_dict
+        
+    datapoint_set = set(data["datapoints"].keys())
+    to_be_deleted_datapoint_set = set() 
+    
+    tag_list = tag_get(use_dict=data, from_actual=False)
+    actual_tag_list = tag_get(use_dict=data, from_actual=True)
+
+    filter_model_tag = True
+    filter_actual_tag = True
+    
+    try:
+        if str(model_tag) not in tag_list: filter_model_tag = False
+    except Exception: filter_model_tag = False
+                
+    try:
+        if str(actual_tag) not in actual_tag_list: filter_actual_tag = False
+    except Exception: filter_actual_tag = False    
+
+    if filter_model_tag:
+        model_tag = str(model_tag)
+        for datapoint in datapoint_set:
+            datapoint_tags = get_single_datapoint(datapoint,
+                                                  main_field="label",
+                                                  field="tags",
+                                                  use_dict=data,
+                                                  )
+            if model_tag not in datapoint_tags:
+                to_be_deleted_datapoint_set.add(datapoint)
+        datapoint_set.difference_update(to_be_deleted_datapoint_set)
+        to_be_deleted_datapoint_set = set()
+    
+    if filter_actual_tag:
+        actual_tag = str(actual_tag)
+        for datapoint in datapoint_set:
+            datapoint_tags = get_single_datapoint(datapoint,
+                                                  main_field="label",
+                                                  field="tags",
+                                                  use_dict=data,
+                                                  from_actual=True,
+                                                  )
+            if actual_tag not in datapoint_tags:
+                to_be_deleted_datapoint_set.add(datapoint)
+        datapoint_set.difference_update(to_be_deleted_datapoint_set)
+        to_be_deleted_datapoint_set = set()
+
+    if model_is_failed in [True, False]:
+        for datapoint in datapoint_set:
+            datapoint_is_failed = get_single_datapoint(datapoint,
+                                                       main_field="label",
+                                                       field="is_failed",
+                                                       use_dict=data,
+                                                       )
+            if datapoint_is_failed != model_is_failed:
+                to_be_deleted_datapoint_set.add(datapoint)
+        datapoint_set.difference_update(to_be_deleted_datapoint_set)
+        to_be_deleted_datapoint_set = set()
+    
+    if actual_is_failed in [True, False]:
+        for datapoint in datapoint_set:
+            datapoint_is_failed = get_single_datapoint(datapoint,
+                                                       main_field="label",
+                                                       field="is_failed",
+                                                       use_dict=data,
+                                                       from_actual=True,
+                                                       )
+            if datapoint_is_failed != actual_is_failed:
+                to_be_deleted_datapoint_set.add(datapoint)
+        datapoint_set.difference_update(to_be_deleted_datapoint_set)
+        to_be_deleted_datapoint_set = set()
+
+    if is_modelled in [True, False]:
+        for datapoint in datapoint_set:
+            if is_modelled != _is_modelled(datapoint, use_dict=data):
+                to_be_deleted_datapoint_set.add(datapoint)
+        datapoint_set.difference_update(to_be_deleted_datapoint_set)
+        to_be_deleted_datapoint_set = set()
+
+    if is_checked in [True, False]:
+        for datapoint in datapoint_set:
+            if is_checked != _is_checked(datapoint, use_dict=data):
+                to_be_deleted_datapoint_set.add(datapoint)
+        datapoint_set.difference_update(to_be_deleted_datapoint_set)
+        to_be_deleted_datapoint_set = set()
+
+    datapoint_list = list(datapoint_set)
+    return datapoint_list       
+     
+
 def get_datapoint(
     datapoint: str,
     from_actual: bool = False,
@@ -496,6 +678,7 @@ def get_datapoint(
     labels: list = [],
     visions: list = [],
     motions: list = [],
+    get_all: bool = False,
 ):
     """
         Safely get the data from the specified datapoint
@@ -530,6 +713,11 @@ def get_datapoint(
 
     elif not from_actual: data_to_retrieve = data["datapoints"][datapoint]["model"]
     else: data_to_retrieve = data["datapoints"][datapoint]["actual"]
+
+    if get_all:
+        labels = label_field_values.keys()
+        visions = vision_field_values.keys()
+        motions = motion_field_values.keys()
 
     # Get the values
     for label in labels:
@@ -662,7 +850,7 @@ def modify_datapoint(
     for label in labels:
 
         value = labels[label]
-        is_valid_value = _is_valid_field_value(value, label, label_field_values)
+        is_valid_value, value = _is_valid_field_value(value, label, label_field_values)
 
         if is_valid_value is None: print(f"Invalid label field name: Field '{label}' does not exist.")
         elif is_valid_value: data_to_modify["label"][label] = value
@@ -671,7 +859,7 @@ def modify_datapoint(
     for vision in visions:
         
         value = visions[vision]
-        is_valid_value = _is_valid_field_value(value, vision, vision_field_values)
+        is_valid_value, value = _is_valid_field_value(value, vision, vision_field_values)
 
         if is_valid_value is None: print(f"Invalid vision field name: Field '{vision}' does not exist.")
         elif is_valid_value: data_to_modify["vision"][vision] = value
@@ -680,7 +868,7 @@ def modify_datapoint(
     for motion in motions:
                 
         value = motions[motion]
-        is_valid_value = _is_valid_field_value(value, motion, motion_field_values)
+        is_valid_value, value = _is_valid_field_value(value, motion, motion_field_values)
 
         if is_valid_value is None: print(f"Invalid motion field name: Field '{motion}' does not exist.")
         elif is_valid_value: data_to_modify["motion"][motion] = value
@@ -877,7 +1065,8 @@ def update_statistics(use_dict: dict=dict()) -> dict:
     # count_labelled = 0
     # count_failed = 0
     # count_checked = 0
-    tag_list = data["tag_list"]
+    # tag_list = data["tag_list"]
+    tag_list = []
     actual_tag_list = []
 
     for datapoint in data["datapoints"]:
@@ -1043,7 +1232,7 @@ def populate_header() -> None:
     # Ensure that header file is generated
     generate_header()
 
-    # update_statistics()
+    update_statistics()
     append_new_fields()
 
     data = load_data()
@@ -1124,16 +1313,20 @@ def tag_add(new_tag: str | list[str]) -> None:
     write_data(data)
 
 
-def tag_get() -> list:
+def tag_get(
+    use_dict: dict = dict(),
+    from_actual: bool = False,
+) -> list:
     """
         Return tag_list of the header file
 
         Returns:
             List of all tags inside the header.json
     """
+    if len(use_dict) == 0: data = load_data()
+    else: data = use_dict 
 
-    data = load_data()    
-
+    if from_actual: return data["actual_tag_list"]
     return data["tag_list"]
     
 
@@ -1193,6 +1386,7 @@ def list_datapoints(from_actual: bool = False) -> None:
     data = load_data()
     df = pd.DataFrame(data["datapoints"])
     print(df.T)
+    return list(data["datapoints"].keys())
 
 def reset_all(modify_actual: bool = False) -> None:
     """

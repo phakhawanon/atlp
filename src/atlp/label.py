@@ -10,6 +10,46 @@ import json
 from transformers import AutoModelForImageTextToText, AutoProcessor
 from pathlib import Path
 
+
+prompt_introduction = (
+    "You are Galbot G1’s instruction labeller."
+    "The robot is instructed to perform a certain task."   
+    "You are given one RGB videos from the robot’s head camera, while the robot is performing the task."   
+    "You must determine the instruction given to the robot based on the three videos you have received.\n"        
+)
+prompt_instruction_outline = (
+    "The task instruction must be a complete sentence."
+    "You must also determine the tags for each task."
+    "This tag represents the skill the robot needs to perform the task."
+    "There may be more than one tags that can represent the task,"
+    "but please strictly stick to one tag per task unless the task is complex."
+    "Please examine and use the list of the current tags first."
+    "If the current tags do not describe the task well, create the new tag.\n"
+)
+
+prompt_instruction_outline_strict = (    
+    "The task instruction must be a complete sentence."
+    "You must also determine the tag for each task."
+    "This tag represents the skill the robot needs to perform the task."
+    "Please carefully select only one tag that best describe the task"
+    "Please examine and use the tags that are present in the current tags list"
+    "Do not create new tags"
+    "If the current tags do not describe the task well, output a list with tag ['Failed'] for tags and True for is_failed"
+    "The output instruction and tag meaning must be aligned."
+)
+
+prompt_is_failed_outline = (
+    "The videos that you have given might sometimes be a failed attempt"   
+    "or incomplete tasks from the teleoperation process."
+    "You must also identify if the videos you have been given are the failed or incomplete tasks,"
+    "which are characterized by hand manipulations with no object involved"
+    "or insuccessful manipulations, characterized by objects failling down\n"
+)
+prompt_deliverables = (
+    "Output the result as the .json format."
+    "Specify instruction: (string), the tags (list of strings), and is_failed: (boolean).\n"
+)
+
 def label() -> None:
     """
         - Label all tracked, unlabelled datapoints
@@ -50,8 +90,18 @@ def label() -> None:
             
             while not success:
 
-                custom_prompt = "You are Galbot G1’s instruction labeller. The robot is instructed to perform a certain task. You are given one RGB videos from the robot’s head camera, while the robot is performing the task. You must determine the instruction given to the robot based on the three videos you have received. The task instruction must be a complete sentence. You must also determine the tags for each task. This tag represents the skill the robot needs to perform the task. There may be more than one tags that can represent the task, but please strictly stick to one tag per task unless the task is complex. Please examine and use the list of the current tags first. If the current tags do not describe the task well, create the new tag. The videos that you have given might sometimes be a failed attempt or incomplete tasks from the teleoperation process. You must also identify if the videos you have been given are the failed or incomplete tasks, which are characterized by hand manipulations with no object involved. Output the result as the .json format. Specify instruction: (string), the tags (list of strings), and is_failed: (boolean). Current tag lists: " + str(tag_lists)
+                prompt_current_tag_list = "Current tag lists: " + str(tag_lists)
+                
+                custom_prompt = (
+                    prompt_introduction +
+                    prompt_is_failed_outline +
+                    prompt_instruction_outline_strict +
+                    prompt_deliverables +
+                    prompt_current_tag_list
+                )
 
+                print(prompt_current_tag_list)
+                
                 # Messages containing a video url(or a local path) and a text query
                 messages = [
                     {
@@ -100,6 +150,7 @@ def label() -> None:
                 try:
                     output_json = json.loads(output_text[0])
                     tag_lists += output_json["tags"]
+                    tag_lists = list(set(tag_lists))
                     modify_datapoint(datapoint, use_dict=data, labels=output_json)
                     # modify_datapoint(datapoint, use_dict=data, is_failed=output_json["is_failed"], is_labelled=True, is_checked=False, instruction=output_json["instruction"], tags=output_json["tags"])
                     # data["datapoints"][datapoint]["is_failed"] = output_json["is_failed"]

@@ -5,7 +5,9 @@ from pathlib import Path
 # file_path = 'data.json'
 # report_file_path = 'report.txt'
 
-mjcf_path = Path("~/auto-task-labelling-pipeline/src/atlp/galbot_one_golf_collision_only.xml").expanduser()
+# mjcf_path = Path("~/auto-task-labelling-pipeline/src/atlp/galbot_one_golf_collision_only.xml").expanduser()
+mjcf_path = Path("/home/o25141/galbot-sim-ioai/physics_sim_edu/assets/synthnova_assets/robots/galbot_one_foxtrot_description/galbot_one_foxtrot.xml")
+
 
 # left_gripper and right_gripper do not appear in data.json,
 # but are made by convert_to_np_array for convenience 
@@ -38,12 +40,21 @@ joint_lim_dict = {
 def _get_idx(model, joint_name):
     """
         Return index of the joint name from the given pinocchio model
+
+        Args:
+            model: 
+            joint_name:
     """
     return model.joints[model.getJointId(joint_name)].idx_q
 
 def _build_q(model, all_joint_arrays, t):
     """
         Populate the model with the all_joint_arrays at time t
+
+        Args:
+            model:
+            all_joint_arrays:
+            t:
     """
 
     q = pin.neutral(model)
@@ -62,16 +73,17 @@ def _build_q(model, all_joint_arrays, t):
     for i, name in enumerate([f'right_arm_joint{j}' for j in range(1,8)]):
         q[_get_idx(model, name)] = all_joint_arrays[14+i, t]
 
-    q[_get_idx(model, "left_gripper_joint")] = all_joint_arrays[27, t]
-    q[_get_idx(model, "right_gripper_joint")] = all_joint_arrays[28, t]
+    # q[_get_idx(model, "left_gripper_joint")] = all_joint_arrays[27, t]
+    # q[_get_idx(model, "right_gripper_joint")] = all_joint_arrays[28, t]
 
     return q
 
     
-def is_self_collision(all_joint_arrays):
+def is_self_collision(all_joint_arrays, distance_threshold=0.02):
     """
         Determine whether the given all_joint_arrays has any self collision or not.
         Does not update the value inside the header file
+        Still not functionable.
     """
     model, _, collision_model, visual_model = pin.buildModelsFromMJCF(mjcf_path)
     data           = model.createData()
@@ -88,8 +100,8 @@ def is_self_collision(all_joint_arrays):
     n = all_joint_arrays.shape[1]
     is_collision = False
 
-    for req in collision_data.collisionRequests:
-        req.security_margin = 1  # applies to all pairs
+    # for req in collision_data.collisionRequests:
+    #     req.security_margin = 1  # applies to all pairs
 
     for t in range(0, n):
 
@@ -98,9 +110,17 @@ def is_self_collision(all_joint_arrays):
         pin.forwardKinematics(model, data, q)
         pin.updateGeometryPlacements(model, data, collision_model, collision_data)
 
+        # # Set margin AFTER updateGeometryPlacements, right before collision check
+        # for req in collision_data.collisionRequests:
+        #     req.security_margin = distance_threshold
+
+        # Set by index — modifies the actual object, not a copy
+        for k in range(len(collision_model.collisionPairs)):
+            collision_data.collisionRequests[k].security_margin = distance_threshold
+        
         # 2. Check all pairs
         is_collision = pin.computeCollisions(
-            model, data, collision_model, collision_data, q,
+            collision_model, collision_data,
             stop_at_first_collision=True   # True = faster, stops early
         )
 

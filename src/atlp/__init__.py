@@ -12,6 +12,11 @@ from .interface import (
     get_joint_states,
     get_root_directory,
     get_all_joint_states,
+    load_data, 
+    tag_remove,
+    tag_add,
+    get_single_datapoint,
+    filter,
 )
 
 from .label import (
