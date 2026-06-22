@@ -40,6 +40,7 @@ app.add_middleware(
     ],
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Range", "Accept-Ranges"],
 )
 
 # Serve video files as static files from a folder called "media"
