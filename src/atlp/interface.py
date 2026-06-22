@@ -481,10 +481,20 @@ def _is_valid_field_value(value, field: str, field_values: dict):
     if isinstance(default_value, type):
         try:
             if default_value is list:
-                value = json.loads(value)
-                print(value)
+
+                if isinstance(value, str):
+                    print(value)
+                    value = json.loads(value)
+                    print(value)
+
+                print(f"I am not a string {value}")
+
             else:
                 value = default_value(value)
+
+            print(isinstance(value, default_value))
+            print(default_value)
+            print(type(value))
             return isinstance(value, default_value), value
         except Exception:
             return False, value
@@ -1066,7 +1076,7 @@ def update_statistics(use_dict: dict=dict()) -> dict:
     # count_failed = 0
     # count_checked = 0
     # tag_list = data["tag_list"]
-    tag_list = []
+    tag_list = default_tag_list
     actual_tag_list = []
 
     for datapoint in data["datapoints"]:

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video Inspector</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- Top accent bar -->
+  <div class="top-bar"></div>
+
+  <div class="app-shell">
+
+    <!-- ── LEFT COLUMN ── -->
+    <aside class="left-col">
+
+      <!-- INPUT: directory path -->
+      <div class="panel" id="panel-input">
+        <label class="panel-label" for="dir-input">Directory Path</label>
+        <div class="input-row">
+          <input type="text" id="dir-input" class="dir-input" placeholder="/path/to/your/directory" autocomplete="off"
+            spellcheck="false" />
+          <button id="load-btn" class="load-btn" onclick="handleDirectoryLoad(false, true)">Load</button>
+        </div>
+        <p class="hint">Press Load or Enter to fetch datapoints from the dataset.</p>
+      </div>
+
+      <div class="panel">
+        <label class="panel-label">Filter Options</label>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <div class="filter-bool" id="is_modelled">is_modelled</div>
+          <div class="filter-bool" id="is_checked">is_checked</div>
+          <div class="filter-tag" id="model_tag">model_tag=</div>
+          <div class="filter-tag" id="actual_tag">actual_tag=</div>
+          <div class="filter-bool" id="model_is_failed">model_is_failed</div>
+          <div class="filter-bool" id="actual_is_failed">actual_is_failed</div>
+        </div>
+      </div>
+
+      <!-- OUTPUT: scrollable string list -->
+      <div class="panel panel-grow" id="panel-output">
+        <div class="panel-label-row">
+          <span class="panel-label">Datapoint List</span>
+          <!-- <button class="clear-btn" onclick="clearOutput()">Clear</button> -->
+        </div>
+        <div id="output-box" class="output-box">
+          <!-- <p class="placeholder-text">Output will appear here…</p> -->
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ── RIGHT COLUMN ── -->
+    <main class="right-col">
+
+      <!-- VIDEO ROW -->
+      <section class="video-section">
+        <h2 class="section-title" id="video-title">Videos</h2>
+        <div class="video-row">
+
+          <div class="video-card">
+            <div class="video-label">Left Wrist Video</div>
+            <!-- ── BACKEND HOOK: replace src or call loadVideo(1, url) ── -->
+            <video id="video1" class="video-el" loop muted preload="metadata">
+              <source src="" type="video/mp4" />
+              No video loaded.
+            </video>
+            <div class="video-overlay" id="overlay1">▶</div>
+          </div>
+
+          <div class="video-card">
+            <div class="video-label">Front Head Video</div>
+            <!-- ── BACKEND HOOK: replace src or call loadVideo(2, url) ── -->
+            <video id="video2" class="video-el" loop muted preload="metadata">
+              <source src="" type="video/mp4" />
+              No video loaded.
+            </video>
+            <div class="video-overlay" id="overlay2">▶</div>
+          </div>
+
+          <div class="video-card">
+            <div class="video-label">Right Wrist Video</div>
+            <!-- ── BACKEND HOOK: replace src or call loadVideo(3, url) ── -->
+            <video id="video3" class="video-el" loop muted preload="metadata">
+              <source src="" type="video/mp4" />
+              No video loaded.
+            </video>
+            <div class="video-overlay" id="overlay3">▶</div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- DIVIDER -->
+      <hr class="section-divider" />
+
+      <!-- JSON ROW -->
+      <section class="json-section">
+        <h2 class="section-title">Datapoint Data
+          <button class="save-btn" onclick="saveJson()">Save</button>
+        </h2>
+        <div class="json-row">
+
+          <div class="panel json-panel" id="panel-json1">
+            <div class="panel-label-row">
+              <span class="panel-label">Model Field</span>
+              <!-- <button class="save-btn" onclick="saveJson(1)">Save</button> -->
+            </div>
+            <!-- ── BACKEND HOOK: populated by loadJson(1, data) ── -->
+            <div id="json1-editor" class="json-editor"></div>
+          </div>
+
+          <div class="panel json-panel" id="panel-json2">
+            <div class="panel-label-row">
+              <span class="panel-label">Actual Field</span>
+              <!-- <button class="save-btn" onclick="saveJson(2)">Save</button> -->
+            </div>
+            <!-- ── BACKEND HOOK: populated by loadJson(2, data) ── -->
+            <div id="json2-editor" class="json-editor"></div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

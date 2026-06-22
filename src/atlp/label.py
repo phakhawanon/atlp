@@ -14,11 +14,12 @@ from pathlib import Path
 prompt_introduction = (
     "You are Galbot G1’s instruction labeller."
     "The robot is instructed to perform a certain task."   
-    "You are given one RGB videos from the robot’s head camera, while the robot is performing the task."   
+    "You are given three RGB videos from the robot’s head camera, left wrist, and right wrist while the robot is performing the task."   
     "You must determine the instruction given to the robot based on the three videos you have received.\n"        
 )
 prompt_instruction_outline = (
     "The task instruction must be a complete sentence."
+    "Be very specific by including color and position of the object into the instruction"
     "You must also determine the tags for each task."
     "This tag represents the skill the robot needs to perform the task."
     "There may be more than one tags that can represent the task,"
@@ -29,6 +30,7 @@ prompt_instruction_outline = (
 
 prompt_instruction_outline_strict = (    
     "The task instruction must be a complete sentence."
+    "Be very specific by including color and position of the object into the instruction"
     "You must also determine the tag for each task."
     "This tag represents the skill the robot needs to perform the task."
     "Please carefully select only one tag that best describe the task"
@@ -46,11 +48,11 @@ prompt_is_failed_outline = (
     "or insuccessful manipulations, characterized by objects failling down\n"
 )
 prompt_deliverables = (
-    "Output the result as the .json format."
+    "Output the result as a plain string in .json format."
     "Specify instruction: (string), the tags (list of strings), and is_failed: (boolean).\n"
 )
 
-def label() -> None:
+def label(model_name : str = "Qwen/Qwen3-VL-2B-Instruct") -> None:
     """
         - Label all tracked, unlabelled datapoints
         - Write the result in the header file
@@ -65,7 +67,7 @@ def label() -> None:
             - enhance debugging prints
     """
     root_directory = get_root_directory()
-    model_name = "Qwen/Qwen3-VL-2B-Instruct"
+    # model_name = "Qwen/Qwen3-VL-2B-Instruct"
     print(f"Start labelling with model {model_name} on path {root_directory}")
 
     # default: Load the model on the available device(s)
@@ -79,6 +81,7 @@ def label() -> None:
     data = load_data()
 
     tag_lists = data["tag_list"]
+    # print(tag_lists)
 
     for datapoint in data["datapoints"]:
 
@@ -112,16 +115,16 @@ def label() -> None:
                                 "video": str(root_directory / datapoint / "camera_front_head_rgb.mp4"),
                                 "fps": 2,
                             },
-                            # {
-                                # "type": "video",
-                                # "video": str(root_directory / datapoint / "camera_left_wrist.mp4"),
-                                # "fps": 1,
-                            # },
-                            # {
-                                # "type": "video",
-                                # "video": str(root_directory / datapoint / "camera_right_wrist.mp4"),
-                                # "fps": 1,
-                            # },
+                            {
+                              "type": "video",
+                              "video": str(root_directory / datapoint / "camera_left_wrist.mp4"),
+                              "fps": 1,
+                            },
+                            {
+                              "type": "video",
+                              "video": str(root_directory / datapoint / "camera_right_wrist.mp4"),
+                              "fps": 1,
+                            },
                             {"type": "text", "text": custom_prompt},
                         ],
                     }
@@ -150,6 +153,7 @@ def label() -> None:
                 try:
                     output_json = json.loads(output_text[0])
                     tag_lists += output_json["tags"]
+                    # print("Tag is", output_json["tags"])
                     tag_lists = list(set(tag_lists))
                     modify_datapoint(datapoint, use_dict=data, labels=output_json)
                     # modify_datapoint(datapoint, use_dict=data, is_failed=output_json["is_failed"], is_labelled=True, is_checked=False, instruction=output_json["instruction"], tags=output_json["tags"])
@@ -163,6 +167,7 @@ def label() -> None:
                     success = True
                     print(f"Labelled {datapoint} with {get_datapoint(datapoint, use_dict=data, labels=['instruction', 'tags','is_failed'])}")
                 except json.JSONDecodeError:
+                    print("Failed attempt, retrying...")
                     success = False
         else:
             print(f"Skip {datapoint} as it has alreaby been labelled.")
