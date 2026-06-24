@@ -6,7 +6,7 @@ from pathlib import Path
 # report_file_path = 'report.txt'
 
 # mjcf_path = Path("~/auto-task-labelling-pipeline/src/atlp/galbot_one_golf_collision_only.xml").expanduser()
-mjcf_path = Path("/home/o25141/galbot-sim-ioai/physics_sim_edu/assets/synthnova_assets/robots/galbot_one_foxtrot_description/galbot_one_foxtrot.xml")
+mjcf_path = Path("/home/o25141/galbot-sim-ioai/physics_sim_edu/assets/synthnova_assets/robots/galbot_one_foxtrot_description_simplified/galbot_one_foxtrot.xml")
 
 
 # left_gripper and right_gripper do not appear in data.json,

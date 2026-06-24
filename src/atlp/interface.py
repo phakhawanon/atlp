@@ -82,12 +82,12 @@ label_field_values = {
 }
 
 vision_field_values = {
-    
+    "brightness": [int],
 }
 
 motion_field_values = {
-    "smoothness": [int],
-    "is_joint_violate": [None, False, True],
+    # "smoothness": [int],
+    # "is_joint_violate": [None, False, True],
     "is_self_collide": [None, False, True],
 }
 
