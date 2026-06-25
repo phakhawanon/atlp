@@ -483,18 +483,18 @@ def _is_valid_field_value(value, field: str, field_values: dict):
             if default_value is list:
 
                 if isinstance(value, str):
-                    print(value)
+                    # print(value)
                     value = json.loads(value)
-                    print(value)
+                    # print(value)
 
-                print(f"I am not a string {value}")
+                # print(f"I am not a string {value}")
 
             else:
                 value = default_value(value)
 
-            print(isinstance(value, default_value))
-            print(default_value)
-            print(type(value))
+            # print(isinstance(value, default_value))
+            # print(default_value)
+            # print(type(value))
             return isinstance(value, default_value), value
         except Exception:
             return False, value
