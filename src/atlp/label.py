@@ -173,8 +173,10 @@ def label(
                     generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
                 )
                 # if isinstance(output_text, list): output_text = output_text[0]
-                print(type(output_text[0]))
-
+                # print(type(output_text[0]))
+                output_text = output_text[0]
+                output_text = output_text.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
+                
                 try:
                     output_json = json.loads(output_text[0])
                     tag_lists += output_json["tags"]
