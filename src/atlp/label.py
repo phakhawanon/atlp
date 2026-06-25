@@ -56,7 +56,7 @@ prompt_is_failed_outline = (
 prompt_deliverables = (
     "Output the result as a plain string in .json format."
     "(Do not use ```json, just output the plain text only)"
-    "(Do not include [] in front of the output string as well)"
+    # "(Do not include [] in front of the output string as well)"
     "Specify instruction: (string), the tags (list of strings), and is_failed: (boolean).\n"
 )
 
@@ -172,6 +172,7 @@ def label(
                 output_text = processor.batch_decode(
                     generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
                 )
+                if isinstance(output_text, list): output_text = output_text[0]
 
                 try:
                     output_json = json.loads(output_text[0])
