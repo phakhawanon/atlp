@@ -7,8 +7,17 @@ from .interface import (
 )
 
 import json
-from transformers import AutoModelForImageTextToText, AutoProcessor
+from transformers import (
+    AutoModelForImageTextToText,
+    AutoProcessor,
+    LlavaNextVideoProcessor,
+    LlavaNextVideoForConditionalGeneration,
+    AutoModelForCausalLM,
+)
 from pathlib import Path
+import torch
+import numpy as np
+import av
 
 
 prompt_introduction = (
@@ -56,33 +65,161 @@ prompt_is_failed_outline = (
 prompt_deliverables = (
     "Output the result as a plain string in .json format."
     "(Do not use ```json, just output the plain text only)"
-    # "(Do not include [] in front of the output string as well)"
     "Specify instruction: (string), the tags (list of strings), and is_failed: (boolean true or false, lowercase).\n"
 )
 
 
+# ---------------------------------------------------------------------------
+# Model-family detection helpers
+# ---------------------------------------------------------------------------
+
 def _is_internvl(model_name: str) -> bool:
-    """Check if the model is an InternVL variant."""
     return "internvl" in model_name.lower()
 
+def _is_paligemma(model_name: str) -> bool:
+    return "paligemma" in model_name.lower()
 
-def _build_messages(model_name: str, video_paths: list[str], prompt: str) -> tuple[list, dict]:
+def _is_llava(model_name: str) -> bool:
+    return "llava" in model_name.lower()
+
+def _is_phi(model_name: str) -> bool:
+    return "phi" in model_name.lower()
+
+
+# ---------------------------------------------------------------------------
+# Model + processor loading
+# ---------------------------------------------------------------------------
+
+def _load_model_and_processor(model_name: str):
+    """
+    Load the appropriate model and processor class for each model family.
+
+    Notes on each family:
+        - Qwen3-VL / InternVL3 : AutoModelForImageTextToText handles both.
+        - PaliGemma2            : Also covered by AutoModelForImageTextToText.
+        - LLaVA-NeXT-Video      : Requires its own *ForConditionalGeneration class
+                                  and LlavaNextVideoProcessor.
+        - Phi-3.5-Vision        : Uses AutoModelForCausalLM with trust_remote_code
+                                  and AutoProcessor.
+    """
+    if _is_llava(model_name):
+        model = LlavaNextVideoForConditionalGeneration.from_pretrained(
+            model_name, torch_dtype=torch.float16, device_map="auto"
+        )
+        processor = LlavaNextVideoProcessor.from_pretrained(model_name)
+    elif _is_phi(model_name):
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            dtype="auto",
+            device_map="auto",
+            trust_remote_code=True,
+        )
+        processor = AutoProcessor.from_pretrained(
+            model_name, trust_remote_code=True, num_crops=4
+        )
+    else:
+        # Qwen3-VL, InternVL3, PaliGemma2
+        model = AutoModelForImageTextToText.from_pretrained(
+            model_name, dtype="auto", device_map="auto"
+        )
+        processor = AutoProcessor.from_pretrained(model_name)
+
+    return model, processor
+
+
+# ---------------------------------------------------------------------------
+# Video frame sampling (needed for models that don't accept raw video files)
+# ---------------------------------------------------------------------------
+
+def _sample_frames(video_path: str, num_frames: int = 8) -> np.ndarray:
+    """
+    Decode a video file and uniformly sample `num_frames` RGB frames.
+
+    Returns:
+        np.ndarray of shape (num_frames, H, W, 3), dtype uint8.
+    """
+    container = av.open(video_path)
+    stream = container.streams.video[0]
+    total = stream.frames or 1
+    indices = set(np.linspace(0, total - 1, num_frames, dtype=int).tolist())
+
+    frames = []
+    for i, frame in enumerate(container.decode(stream)):
+        if i in indices:
+            frames.append(frame.to_ndarray(format="rgb24"))
+        if len(frames) == num_frames:
+            break
+
+    container.close()
+
+    # Pad with last frame if the video is shorter than num_frames
+    while len(frames) < num_frames:
+        frames.append(frames[-1])
+
+    return np.stack(frames)   # (T, H, W, 3)
+
+
+# ---------------------------------------------------------------------------
+# Message building
+# ---------------------------------------------------------------------------
+
+def _build_messages(
+    model_name: str,
+    video_paths: list[str],
+    prompt: str,
+) -> tuple[list, dict]:
     """
     Build the messages list and apply_chat_template kwargs for the given model.
 
     Returns:
-        messages: list to pass to apply_chat_template
-        template_kwargs: extra kwargs for apply_chat_template (fps or num_frames)
+        messages        : list passed to processor.apply_chat_template
+        template_kwargs : extra kwargs for apply_chat_template
     """
     if _is_internvl(model_name):
-        # InternVL3: uses "url" key for video, num_frames in apply_chat_template
-        content = [
-            {"type": "video", "url": path} for path in video_paths
-        ]
+        content = [{"type": "video", "url": path} for path in video_paths]
         content.append({"type": "text", "text": prompt})
         template_kwargs = {"num_frames": 8}
+
+    elif _is_paligemma(model_name):
+        # PaliGemma2 does not natively support video; we sample frames and
+        # pass them as a sequence of images instead.
+        content = []
+        for path in video_paths:
+            frames = _sample_frames(path, num_frames=4)   # 4 frames per clip
+            for frame in frames:
+                content.append({"type": "image", "image": frame})
+        content.append({"type": "text", "text": prompt})
+        template_kwargs = {}
+
+    elif _is_llava(model_name):
+        # LLaVA-NeXT-Video expects raw numpy arrays (T, H, W, 3) under "video"
+        content = []
+        for path in video_paths:
+            frames = _sample_frames(path, num_frames=8)
+            content.append({"type": "video", "video": frames})
+        content.append({"type": "text", "text": prompt})
+        template_kwargs = {}
+
+    elif _is_phi(model_name):
+        # Phi-3.5-Vision uses a special <|image_N|> placeholder syntax.
+        # Videos are decomposed into frames passed as individual images.
+        images = []
+        placeholder_text = ""
+        img_idx = 1
+        for path in video_paths:
+            frames = _sample_frames(path, num_frames=4)
+            for frame in frames:
+                images.append(frame)
+                placeholder_text += f"<|image_{img_idx}|>\n"
+                img_idx += 1
+
+        full_text = placeholder_text + prompt
+        messages = [{"role": "user", "content": full_text}]
+        # Return early — Phi uses a non-standard template flow handled in label()
+        return messages, {"images": images, "_phi": True}
+
     else:
-        # Qwen3-VL (default): uses "video" key, fps in apply_chat_template
+        # Qwen3-VL (default)
         content = [
             {"type": "video", "video": path, "fps": 2} for path in video_paths
         ]
@@ -93,49 +230,123 @@ def _build_messages(model_name: str, video_paths: list[str], prompt: str) -> tup
     return messages, template_kwargs
 
 
+# ---------------------------------------------------------------------------
+# Inference
+# ---------------------------------------------------------------------------
+
+def _run_inference(
+    model,
+    processor,
+    model_name: str,
+    messages: list,
+    template_kwargs: dict,
+) -> str:
+    """
+    Run a single forward pass and return the decoded output string.
+
+    Phi-3.5 is handled separately because it uses AutoModelForCausalLM and
+    does not support apply_chat_template in the same way.
+    """
+    # --- Phi-3.5 ---
+    if template_kwargs.pop("_phi", False):
+        from PIL import Image as PILImage
+
+        images_np = template_kwargs.pop("images", [])
+        pil_images = [PILImage.fromarray(f) for f in images_np]
+
+        prompt_text = processor.tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        inputs = processor(prompt_text, pil_images, return_tensors="pt").to(model.device)
+
+        with torch.no_grad():
+            generated_ids = model.generate(
+                **inputs,
+                max_new_tokens=128,
+                eos_token_id=processor.tokenizer.eos_token_id,
+            )
+
+        generated_ids_trimmed = generated_ids[:, inputs["input_ids"].shape[1]:]
+        return processor.batch_decode(
+            generated_ids_trimmed,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )[0]
+
+    # --- All other models (Qwen, InternVL, PaliGemma2, LLaVA) ---
+    inputs = processor.apply_chat_template(
+        messages,
+        tokenize=True,
+        add_generation_prompt=True,
+        return_dict=True,
+        return_tensors="pt",
+        **template_kwargs,
+    )
+    inputs = inputs.to(model.device)
+
+    with torch.no_grad():
+        generated_ids = model.generate(**inputs, max_new_tokens=128)
+
+    generated_ids_trimmed = [
+        out_ids[len(in_ids):]
+        for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+    ]
+    return processor.batch_decode(
+        generated_ids_trimmed,
+        skip_special_tokens=True,
+        clean_up_tokenization_spaces=False,
+    )[0]
+
+
+# ---------------------------------------------------------------------------
+# Main labelling entry point
+# ---------------------------------------------------------------------------
+
 def label(
     model_name: str = "Qwen/Qwen3-VL-2B-Instruct",
     fail_verbose: bool = False,
 ) -> None:
     """
-        - Label all tracked, unlabelled datapoints
-        - Write the result in the header file
+    Label all tracked, unlabelled datapoints and write results to the header file.
 
-        Supported models:
-            - Qwen3-VL family  (e.g. "Qwen/Qwen3-VL-2B-Instruct")
-            - InternVL3 family (e.g. "OpenGVLab/InternVL3-8B-hf")
+    Supported model families
+    ------------------------
+    - Qwen3-VL       e.g. ``"Qwen/Qwen3-VL-2B-Instruct"``
+    - InternVL3      e.g. ``"OpenGVLab/InternVL3-8B-hf"``
+    - PaliGemma2     e.g. ``"google/paligemma2-3b-pt-224"``
+    - LLaVA-Video    e.g. ``"llava-hf/LLaVA-NeXT-Video-7B-hf"``
+    - Phi-3.5-Vision e.g. ``"microsoft/Phi-3.5-vision-instruct"``
 
-        Warnings:
-            - Require a lot of VRAM
-            - Must use populate_header() first to ensure that all files are tracked
-            
-        .. todo::
-            - disable the warning while labelling
-            - enhance debugging prints
+    Warnings
+    --------
+    - Requires substantial VRAM (amount varies by model size).
+    - Run ``populate_header()`` first to ensure all files are tracked.
+    - PaliGemma2, LLaVA, and Phi-3.5 require ``av`` (PyAV) for frame sampling:
+      ``pip install av``.
+    - Phi-3.5 additionally requires ``pillow``.
     """
     root_directory = get_root_directory()
     print(f"Start labelling with model {model_name} on path {root_directory}")
 
-    model = AutoModelForImageTextToText.from_pretrained(
-        model_name, dtype="auto", device_map="auto",
-    )
-    processor = AutoProcessor.from_pretrained(model_name)
+    model, processor = _load_model_and_processor(model_name)
 
     data = load_data()
     tag_lists = data["tag_list"]
 
     for datapoint in data["datapoints"]:
 
-        instruction = get_datapoint(datapoint, use_dict=data, labels=["instruction"])["label"]["instruction"]
+        instruction = get_datapoint(
+            datapoint, use_dict=data, labels=["instruction"]
+        )["label"]["instruction"]
 
         if not instruction:
 
             success = False
-            
+
             while not success:
 
                 prompt_current_tag_list = "Current tag lists: " + str(tag_lists)
-                
+
                 custom_prompt = (
                     prompt_introduction +
                     prompt_is_failed_outline +
@@ -145,49 +356,44 @@ def label(
                     prompt_current_tag_list
                 )
 
-                # print(prompt_current_tag_list)
-
                 video_paths = [
                     str(root_directory / datapoint / "camera_front_head_rgb.mp4"),
                     str(root_directory / datapoint / "camera_left_wrist.mp4"),
                     str(root_directory / datapoint / "camera_right_wrist.mp4"),
                 ]
 
-                messages, template_kwargs = _build_messages(model_name, video_paths, custom_prompt)
-
-                inputs = processor.apply_chat_template(
-                    messages,
-                    tokenize=True,
-                    add_generation_prompt=True,
-                    return_dict=True,
-                    return_tensors="pt",
-                    **template_kwargs,
+                messages, template_kwargs = _build_messages(
+                    model_name, video_paths, custom_prompt
                 )
-                inputs = inputs.to(model.device)
 
-                generated_ids = model.generate(**inputs, max_new_tokens=128)
-                generated_ids_trimmed = [
-                    out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
-                ]
-                output_text = processor.batch_decode(
-                    generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
+                output_text = _run_inference(
+                    model, processor, model_name, messages, template_kwargs
                 )
-                # if isinstance(output_text, list): output_text = output_text[0]
-                # print(type(output_text[0]))
-                output_text = output_text[0]
-                output_text = output_text.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
-                
+
+                output_text = (
+                    output_text.strip()
+                    .lstrip("```json")
+                    .lstrip("```")
+                    .rstrip("```")
+                    .strip()
+                )
+
                 try:
                     output_json = json.loads(output_text)
                     tag_lists += output_json["tags"]
                     tag_lists = list(set(tag_lists))
                     modify_datapoint(datapoint, use_dict=data, labels=output_json)
                     success = True
-                    print(f"Labelled {datapoint} with {get_datapoint(datapoint, use_dict=data, labels=['instruction', 'tags', 'is_failed'])}")
+                    print(
+                        f"Labelled {datapoint} with "
+                        f"{get_datapoint(datapoint, use_dict=data, labels=['instruction', 'tags', 'is_failed'])}"
+                    )
                 except json.JSONDecodeError:
                     print("Failed attempt, retrying...")
-                    if fail_verbose: print(output_text)
+                    if fail_verbose:
+                        print(output_text)
                     success = False
+
         else:
             print(f"Skip {datapoint} as it has already been labelled.")
 
