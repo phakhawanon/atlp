@@ -56,6 +56,7 @@ prompt_is_failed_outline = (
 prompt_deliverables = (
     "Output the result as a plain string in .json format."
     "(Do not use ```json, just output the plain text only)"
+    "(Do not include [] in front of the output string as well)"
     "Specify instruction: (string), the tags (list of strings), and is_failed: (boolean).\n"
 )
 
