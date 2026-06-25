@@ -178,7 +178,7 @@ def label(
                 output_text = output_text.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
                 
                 try:
-                    output_json = json.loads(output_text[0])
+                    output_json = json.loads(output_text)
                     tag_lists += output_json["tags"]
                     tag_lists = list(set(tag_lists))
                     modify_datapoint(datapoint, use_dict=data, labels=output_json)
