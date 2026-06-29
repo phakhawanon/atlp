@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>atlp.label &#8212; ATLP  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=2bf1fcf8" />
+    
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">ATLP  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">atlp.label</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for atlp.label</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">.interface</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">load_data</span><span class="p">,</span>
+    <span class="n">get_datapoint</span><span class="p">,</span>
+    <span class="n">modify_datapoint</span><span class="p">,</span>
+    <span class="n">write_data</span><span class="p">,</span>
+    <span class="n">get_root_directory</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AutoModelForImageTextToText</span><span class="p">,</span>
+    <span class="n">AutoProcessor</span><span class="p">,</span>
+    <span class="n">LlavaNextVideoProcessor</span><span class="p">,</span>
+    <span class="n">LlavaNextVideoForConditionalGeneration</span><span class="p">,</span>
+    <span class="n">AutoModelForCausalLM</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">av</span>
+
+
+<span class="n">prompt_introduction</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;You are Galbot G1&#39;s instruction labeller.&quot;</span>
+    <span class="s2">&quot;The robot is instructed to perform a certain task.&quot;</span>   
+    <span class="s2">&quot;You are given three RGB videos from the robot&#39;s head camera, left wrist, and right wrist while the robot is performing the task.&quot;</span>   
+    <span class="s2">&quot;You must determine the instruction given to the robot based on the three videos you have received.</span><span class="se">\n</span><span class="s2">&quot;</span>        
+<span class="p">)</span>
+<span class="n">prompt_instruction_outline</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;The task instruction must be a complete sentence.&quot;</span>
+    <span class="s2">&quot;Be very specific by including color and position of the object into the instruction&quot;</span>
+    <span class="s2">&quot;You must also determine the tags for each task.&quot;</span>
+    <span class="s2">&quot;This tag represents the skill the robot needs to perform the task.&quot;</span>
+    <span class="s2">&quot;There may be more than one tags that can represent the task,&quot;</span>
+    <span class="s2">&quot;but please strictly stick to one tag per task unless the task is complex.&quot;</span>
+    <span class="s2">&quot;Please examine and use the list of the current tags first.&quot;</span>
+    <span class="s2">&quot;If the current tags do not describe the task well, create the new tag.</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+
+<span class="n">prompt_instruction_outline_strict</span> <span class="o">=</span> <span class="p">(</span>    
+    <span class="s2">&quot;The task instruction must be a complete sentence.&quot;</span>
+    <span class="s2">&quot;Be very specific by including color and position of the object into the instruction&quot;</span>
+    <span class="s2">&quot;You must also determine the tag for each task.&quot;</span>
+    <span class="s2">&quot;This tag represents the skill the robot needs to perform the task.&quot;</span>
+    <span class="s2">&quot;Please carefully select only one tag that best describe the task&quot;</span>
+    <span class="s2">&quot;Please examine and use the tags that are present in the current tags list&quot;</span>
+    <span class="s2">&quot;Do not create new tags&quot;</span>
+    <span class="s2">&quot;If the current tags do not describe the task well, output a list with tag [&#39;Failed&#39;] for tags and True for is_failed&quot;</span>
+    <span class="s2">&quot;The output instruction and tag meaning must be aligned.</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+
+<span class="n">prompt_instruction_pouring</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;For the pouring tag, if the bottle or any object falls over, mark the task as failed&quot;</span>
+    <span class="s2">&quot;If the robot does not pour anything, also mark it as failed.&quot;</span>
+    <span class="s2">&quot;For all pouring tag, the lid is intentionally closed. Do not count them as fail.</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+
+<span class="n">prompt_is_failed_outline</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;The videos that you have given might sometimes be a failed attempt&quot;</span>   
+    <span class="s2">&quot;or incomplete tasks from the teleoperation process.&quot;</span>
+    <span class="s2">&quot;You must also identify if the videos you have been given are the failed or incomplete tasks,&quot;</span>
+    <span class="s2">&quot;which are characterized by hand manipulations with no object involved&quot;</span>
+    <span class="s2">&quot;or insuccessful manipulations, characterized by objects failling down</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+<span class="n">prompt_deliverables</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;Output the result as a plain string in .json format.&quot;</span>
+    <span class="s2">&quot;(Do not use ```json, just output the plain text only)&quot;</span>
+    <span class="s2">&quot;Specify instruction: (string), the tags (list of strings), and is_failed: (boolean true or false, lowercase).</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Model-family detection helpers</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_internvl</span><span class="p">(</span><span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="s2">&quot;internvl&quot;</span> <span class="ow">in</span> <span class="n">model_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_paligemma</span><span class="p">(</span><span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="s2">&quot;paligemma&quot;</span> <span class="ow">in</span> <span class="n">model_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_llava</span><span class="p">(</span><span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="s2">&quot;llava&quot;</span> <span class="ow">in</span> <span class="n">model_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_phi</span><span class="p">(</span><span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="s2">&quot;phi&quot;</span> <span class="ow">in</span> <span class="n">model_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Model + processor loading</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_load_model_and_processor</span><span class="p">(</span><span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load the appropriate model and processor class for each model family.</span>
+
+<span class="sd">    Notes on each family:</span>
+<span class="sd">        - Qwen3-VL / InternVL3 : AutoModelForImageTextToText handles both.</span>
+<span class="sd">        - PaliGemma2            : Also covered by AutoModelForImageTextToText.</span>
+<span class="sd">        - LLaVA-NeXT-Video      : Requires its own *ForConditionalGeneration class</span>
+<span class="sd">                                  and LlavaNextVideoProcessor.</span>
+<span class="sd">        - Phi-3.5-Vision        : Uses AutoModelForCausalLM with trust_remote_code</span>
+<span class="sd">                                  and AutoProcessor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">_is_llava</span><span class="p">(</span><span class="n">model_name</span><span class="p">):</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">LlavaNextVideoForConditionalGeneration</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+            <span class="n">model_name</span><span class="p">,</span> <span class="n">torch_dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float16</span><span class="p">,</span> <span class="n">device_map</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span>
+        <span class="p">)</span>
+        <span class="n">processor</span> <span class="o">=</span> <span class="n">LlavaNextVideoProcessor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_name</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">_is_phi</span><span class="p">(</span><span class="n">model_name</span><span class="p">):</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForCausalLM</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+            <span class="n">model_name</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+            <span class="n">device_map</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+            <span class="n">trust_remote_code</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">processor</span> <span class="o">=</span> <span class="n">AutoProcessor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+            <span class="n">model_name</span><span class="p">,</span> <span class="n">trust_remote_code</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_crops</span><span class="o">=</span><span class="mi">4</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Qwen3-VL, InternVL3, PaliGemma2</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForImageTextToText</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+            <span class="n">model_name</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">device_map</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span>
+        <span class="p">)</span>
+        <span class="n">processor</span> <span class="o">=</span> <span class="n">AutoProcessor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_name</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">processor</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Video frame sampling (needed for models that don&#39;t accept raw video files)</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_sample_frames</span><span class="p">(</span><span class="n">video_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">num_frames</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decode a video file and uniformly sample `num_frames` RGB frames.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray of shape (num_frames, H, W, 3), dtype uint8.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">container</span> <span class="o">=</span> <span class="n">av</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">video_path</span><span class="p">)</span>
+    <span class="n">stream</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">streams</span><span class="o">.</span><span class="n">video</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">frames</span> <span class="ow">or</span> <span class="mi">1</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">total</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num_frames</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+    <span class="n">frames</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">frame</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">stream</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+            <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s2">&quot;rgb24&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_frames</span><span class="p">:</span>
+            <span class="k">break</span>
+
+    <span class="n">container</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># Pad with last frame if the video is shorter than num_frames</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">num_frames</span><span class="p">:</span>
+        <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frames</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span>   <span class="c1"># (T, H, W, 3)</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Message building</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_build_messages</span><span class="p">(</span>
+    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">video_paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build the messages list and apply_chat_template kwargs for the given model.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        messages        : list passed to processor.apply_chat_template</span>
+<span class="sd">        template_kwargs : extra kwargs for apply_chat_template</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">_is_internvl</span><span class="p">(</span><span class="n">model_name</span><span class="p">):</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;video&quot;</span><span class="p">,</span> <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">}</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">video_paths</span><span class="p">]</span>
+        <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">})</span>
+        <span class="n">template_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;num_frames&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">}</span>
+
+    <span class="k">elif</span> <span class="n">_is_paligemma</span><span class="p">(</span><span class="n">model_name</span><span class="p">):</span>
+        <span class="c1"># PaliGemma2 does not natively support video; we sample frames and</span>
+        <span class="c1"># pass them as a sequence of images instead.</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">video_paths</span><span class="p">:</span>
+            <span class="n">frames</span> <span class="o">=</span> <span class="n">_sample_frames</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">num_frames</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>   <span class="c1"># 4 frames per clip</span>
+            <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">frames</span><span class="p">:</span>
+                <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="n">frame</span><span class="p">})</span>
+        <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">})</span>
+        <span class="n">template_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">elif</span> <span class="n">_is_llava</span><span class="p">(</span><span class="n">model_name</span><span class="p">):</span>
+        <span class="c1"># LLaVA-NeXT-Video expects raw numpy arrays (T, H, W, 3) under &quot;video&quot;</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">video_paths</span><span class="p">:</span>
+            <span class="n">frames</span> <span class="o">=</span> <span class="n">_sample_frames</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">num_frames</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+            <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;video&quot;</span><span class="p">,</span> <span class="s2">&quot;video&quot;</span><span class="p">:</span> <span class="n">frames</span><span class="p">})</span>
+        <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">})</span>
+        <span class="n">template_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">elif</span> <span class="n">_is_phi</span><span class="p">(</span><span class="n">model_name</span><span class="p">):</span>
+        <span class="c1"># Phi-3.5-Vision uses a special &lt;|image_N|&gt; placeholder syntax.</span>
+        <span class="c1"># Videos are decomposed into frames passed as individual images.</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">placeholder_text</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">img_idx</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">video_paths</span><span class="p">:</span>
+            <span class="n">frames</span> <span class="o">=</span> <span class="n">_sample_frames</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">num_frames</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">frames</span><span class="p">:</span>
+                <span class="n">images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+                <span class="n">placeholder_text</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;&lt;|image_</span><span class="si">{</span><span class="n">img_idx</span><span class="si">}</span><span class="s2">|&gt;</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="n">img_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">full_text</span> <span class="o">=</span> <span class="n">placeholder_text</span> <span class="o">+</span> <span class="n">prompt</span>
+        <span class="n">messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">full_text</span><span class="p">}]</span>
+        <span class="c1"># Return early — Phi uses a non-standard template flow handled in label()</span>
+        <span class="k">return</span> <span class="n">messages</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;images&quot;</span><span class="p">:</span> <span class="n">images</span><span class="p">,</span> <span class="s2">&quot;_phi&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Qwen3-VL (default)</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;video&quot;</span><span class="p">,</span> <span class="s2">&quot;video&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span> <span class="s2">&quot;fps&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">video_paths</span>
+        <span class="p">]</span>
+        <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">})</span>
+        <span class="n">template_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;fps&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}</span>
+
+    <span class="n">messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">}]</span>
+    <span class="k">return</span> <span class="n">messages</span><span class="p">,</span> <span class="n">template_kwargs</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Inference</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_run_inference</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">processor</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">messages</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">template_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run a single forward pass and return the decoded output string.</span>
+
+<span class="sd">    Phi-3.5 is handled separately because it uses AutoModelForCausalLM and</span>
+<span class="sd">    does not support apply_chat_template in the same way.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># --- Phi-3.5 ---</span>
+    <span class="k">if</span> <span class="n">template_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;_phi&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span> <span class="k">as</span> <span class="n">PILImage</span>
+
+        <span class="n">images_np</span> <span class="o">=</span> <span class="n">template_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;images&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">pil_images</span> <span class="o">=</span> <span class="p">[</span><span class="n">PILImage</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">images_np</span><span class="p">]</span>
+
+        <span class="n">prompt_text</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
+            <span class="n">messages</span><span class="p">,</span> <span class="n">tokenize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">processor</span><span class="p">(</span><span class="n">prompt_text</span><span class="p">,</span> <span class="n">pil_images</span><span class="p">,</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">generated_ids</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span>
+                <span class="o">**</span><span class="n">inputs</span><span class="p">,</span>
+                <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+                <span class="n">eos_token_id</span><span class="o">=</span><span class="n">processor</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">eos_token_id</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">generated_ids_trimmed</span> <span class="o">=</span> <span class="n">generated_ids</span><span class="p">[:,</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:]</span>
+        <span class="k">return</span> <span class="n">processor</span><span class="o">.</span><span class="n">batch_decode</span><span class="p">(</span>
+            <span class="n">generated_ids_trimmed</span><span class="p">,</span>
+            <span class="n">skip_special_tokens</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">clean_up_tokenization_spaces</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># --- All other models (Qwen, InternVL, PaliGemma2, LLaVA) ---</span>
+    <span class="n">inputs</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
+        <span class="n">messages</span><span class="p">,</span>
+        <span class="n">tokenize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">return_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">template_kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">generated_ids</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">inputs</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">128</span><span class="p">)</span>
+
+    <span class="n">generated_ids_trimmed</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">out_ids</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">in_ids</span><span class="p">):]</span>
+        <span class="k">for</span> <span class="n">in_ids</span><span class="p">,</span> <span class="n">out_ids</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">generated_ids</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="n">processor</span><span class="o">.</span><span class="n">batch_decode</span><span class="p">(</span>
+        <span class="n">generated_ids_trimmed</span><span class="p">,</span>
+        <span class="n">skip_special_tokens</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">clean_up_tokenization_spaces</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Main labelling entry point</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="label">
+<a class="viewcode-back" href="../../atlp.html#atlp.label.label">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">label</span><span class="p">(</span>
+    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Qwen/Qwen3-VL-2B-Instruct&quot;</span><span class="p">,</span>
+    <span class="n">fail_verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Label all tracked, unlabelled datapoints and write results to the header file.</span>
+
+<span class="sd">    Supported model families</span>
+<span class="sd">    ------------------------</span>
+<span class="sd">    - Qwen3-VL       e.g. ``&quot;Qwen/Qwen3-VL-2B-Instruct&quot;``</span>
+<span class="sd">    - InternVL3      e.g. ``&quot;OpenGVLab/InternVL3-8B-hf&quot;``</span>
+<span class="sd">    - PaliGemma2     e.g. ``&quot;google/paligemma2-3b-pt-224&quot;``</span>
+<span class="sd">    - LLaVA-Video    e.g. ``&quot;llava-hf/LLaVA-NeXT-Video-7B-hf&quot;``</span>
+<span class="sd">    - Phi-3.5-Vision e.g. ``&quot;microsoft/Phi-3.5-vision-instruct&quot;``</span>
+
+<span class="sd">    Warnings</span>
+<span class="sd">    --------</span>
+<span class="sd">    - Requires substantial VRAM (amount varies by model size).</span>
+<span class="sd">    - Run ``populate_header()`` first to ensure all files are tracked.</span>
+<span class="sd">    - PaliGemma2, LLaVA, and Phi-3.5 require ``av`` (PyAV) for frame sampling:</span>
+<span class="sd">      ``pip install av``.</span>
+<span class="sd">    - Phi-3.5 additionally requires ``pillow``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">root_directory</span> <span class="o">=</span> <span class="n">get_root_directory</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Start labelling with model </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2"> on path </span><span class="si">{</span><span class="n">root_directory</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">model</span><span class="p">,</span> <span class="n">processor</span> <span class="o">=</span> <span class="n">_load_model_and_processor</span><span class="p">(</span><span class="n">model_name</span><span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+    <span class="n">tag_lists</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
+
+        <span class="n">instruction</span> <span class="o">=</span> <span class="n">get_datapoint</span><span class="p">(</span>
+            <span class="n">datapoint</span><span class="p">,</span> <span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;instruction&quot;</span><span class="p">]</span>
+        <span class="p">)[</span><span class="s2">&quot;label&quot;</span><span class="p">][</span><span class="s2">&quot;instruction&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">instruction</span><span class="p">:</span>
+
+            <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="k">while</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+
+                <span class="n">prompt_current_tag_list</span> <span class="o">=</span> <span class="s2">&quot;Current tag lists: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">tag_lists</span><span class="p">)</span>
+
+                <span class="n">custom_prompt</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">prompt_introduction</span> <span class="o">+</span>
+                    <span class="n">prompt_is_failed_outline</span> <span class="o">+</span>
+                    <span class="n">prompt_instruction_outline_strict</span> <span class="o">+</span>
+                    <span class="n">prompt_instruction_pouring</span> <span class="o">+</span>
+                    <span class="n">prompt_deliverables</span> <span class="o">+</span>
+                    <span class="n">prompt_current_tag_list</span>
+                <span class="p">)</span>
+
+                <span class="n">video_paths</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="nb">str</span><span class="p">(</span><span class="n">root_directory</span> <span class="o">/</span> <span class="n">datapoint</span> <span class="o">/</span> <span class="s2">&quot;camera_front_head_rgb.mp4&quot;</span><span class="p">),</span>
+                    <span class="nb">str</span><span class="p">(</span><span class="n">root_directory</span> <span class="o">/</span> <span class="n">datapoint</span> <span class="o">/</span> <span class="s2">&quot;camera_left_wrist.mp4&quot;</span><span class="p">),</span>
+                    <span class="nb">str</span><span class="p">(</span><span class="n">root_directory</span> <span class="o">/</span> <span class="n">datapoint</span> <span class="o">/</span> <span class="s2">&quot;camera_right_wrist.mp4&quot;</span><span class="p">),</span>
+                <span class="p">]</span>
+
+                <span class="n">messages</span><span class="p">,</span> <span class="n">template_kwargs</span> <span class="o">=</span> <span class="n">_build_messages</span><span class="p">(</span>
+                    <span class="n">model_name</span><span class="p">,</span> <span class="n">video_paths</span><span class="p">,</span> <span class="n">custom_prompt</span>
+                <span class="p">)</span>
+
+                <span class="n">output_text</span> <span class="o">=</span> <span class="n">_run_inference</span><span class="p">(</span>
+                    <span class="n">model</span><span class="p">,</span> <span class="n">processor</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">messages</span><span class="p">,</span> <span class="n">template_kwargs</span>
+                <span class="p">)</span>
+
+                <span class="n">output_text</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">output_text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;```json&quot;</span><span class="p">)</span>
+                    <span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;```&quot;</span><span class="p">)</span>
+                    <span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;```&quot;</span><span class="p">)</span>
+                    <span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="p">)</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">output_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">output_text</span><span class="p">)</span>
+                    <span class="n">tag_lists</span> <span class="o">+=</span> <span class="n">output_json</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">]</span>
+                    <span class="n">tag_lists</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">tag_lists</span><span class="p">))</span>
+                    <span class="n">modify_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">output_json</span><span class="p">)</span>
+                    <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Labelled </span><span class="si">{</span><span class="n">datapoint</span><span class="si">}</span><span class="s2"> with &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">get_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span><span class="w"> </span><span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;instruction&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;tags&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;is_failed&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Failed attempt, retrying...&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">fail_verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="n">output_text</span><span class="p">)</span>
+                    <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skip </span><span class="si">{</span><span class="n">datapoint</span><span class="si">}</span><span class="s2"> as it has already been labelled.&quot;</span><span class="p">)</span>
+
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">tag_lists</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]))</span>
+    <span class="n">write_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finish labelling&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">ATLP  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">atlp.label</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Phakhawanon.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+atlp.evaluation package
+=======================
+
+Submodules
+----------
+
+atlp.evaluation.evaluate\_tag module
+------------------------------------
+
+.. automodule:: atlp.evaluation.evaluate_tag
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: atlp.evaluation
+   :members:
+   :show-inheritance:
+   :undoc-members:

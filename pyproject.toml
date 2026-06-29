@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "atlp"
+version = "0.1.0"
+
+# Add this section to tell Python to look inside the src directory
+[tool.setuptools.packages.find]
+where = ["src"]

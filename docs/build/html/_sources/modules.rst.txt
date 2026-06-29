@@ -1,5 +1,5 @@
-auto-task-labelling-pipeline
-============================
+src
+===
 
 .. toctree::
    :maxdepth: 4

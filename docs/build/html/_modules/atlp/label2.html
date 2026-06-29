@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>atlp.label2 &#8212; ATLP  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=2bf1fcf8" />
+    
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">ATLP  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">atlp.label2</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for atlp.label2</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">.interface</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">load_data</span><span class="p">,</span>
+    <span class="n">get_datapoint</span><span class="p">,</span>
+    <span class="n">modify_datapoint</span><span class="p">,</span>
+    <span class="n">write_data</span><span class="p">,</span>
+    <span class="n">get_root_directory</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoModelForImageTextToText</span><span class="p">,</span> <span class="n">AutoProcessor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+
+<span class="n">prompt_introduction</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;You are Galbot G1’s instruction labeller.&quot;</span>
+    <span class="s2">&quot;The robot is instructed to perform a certain task.&quot;</span>   
+    <span class="s2">&quot;You are given three RGB videos from the robot’s head camera, left wrist, and right wrist while the robot is performing the task.&quot;</span>   
+    <span class="s2">&quot;You must determine the instruction given to the robot based on the three videos you have received.</span><span class="se">\n</span><span class="s2">&quot;</span>        
+<span class="p">)</span>
+<span class="n">prompt_instruction_outline</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;The task instruction must be a complete sentence.&quot;</span>
+    <span class="s2">&quot;Be very specific by including color and position of the object into the instruction&quot;</span>
+    <span class="s2">&quot;You must also determine the tags for each task.&quot;</span>
+    <span class="s2">&quot;This tag represents the skill the robot needs to perform the task.&quot;</span>
+    <span class="s2">&quot;There may be more than one tags that can represent the task,&quot;</span>
+    <span class="s2">&quot;but please strictly stick to one tag per task unless the task is complex.&quot;</span>
+    <span class="s2">&quot;Please examine and use the list of the current tags first.&quot;</span>
+    <span class="s2">&quot;If the current tags do not describe the task well, create the new tag.</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+
+<span class="n">prompt_instruction_outline_strict</span> <span class="o">=</span> <span class="p">(</span>    
+    <span class="s2">&quot;The task instruction must be a complete sentence.&quot;</span>
+    <span class="s2">&quot;Be very specific by including color and position of the object into the instruction&quot;</span>
+    <span class="s2">&quot;You must also determine the tag for each task.&quot;</span>
+    <span class="s2">&quot;This tag represents the skill the robot needs to perform the task.&quot;</span>
+    <span class="s2">&quot;Please carefully select only one tag that best describe the task&quot;</span>
+    <span class="s2">&quot;Please examine and use the tags that are present in the current tags list&quot;</span>
+    <span class="s2">&quot;Do not create new tags&quot;</span>
+    <span class="s2">&quot;If the current tags do not describe the task well, output a list with tag [&#39;Failed&#39;] for tags and True for is_failed&quot;</span>
+    <span class="s2">&quot;The output instruction and tag meaning must be aligned.&quot;</span>
+<span class="p">)</span>
+
+<span class="n">prompt_is_failed_outline</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;The videos that you have given might sometimes be a failed attempt&quot;</span>   
+    <span class="s2">&quot;or incomplete tasks from the teleoperation process.&quot;</span>
+    <span class="s2">&quot;You must also identify if the videos you have been given are the failed or incomplete tasks,&quot;</span>
+    <span class="s2">&quot;which are characterized by hand manipulations with no object involved&quot;</span>
+    <span class="s2">&quot;or insuccessful manipulations, characterized by objects failling down</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+<span class="n">prompt_deliverables</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;Output the result as a plain string in .json format.&quot;</span>
+    <span class="s2">&quot;Specify instruction: (string), the tags (list of strings), and is_failed: (boolean).</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+
+<div class="viewcode-block" id="label">
+<a class="viewcode-back" href="../../atlp.html#atlp.label2.label">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">label</span><span class="p">(</span><span class="n">model_name</span> <span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Qwen/Qwen3-VL-2B-Instruct&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        - Label all tracked, unlabelled datapoints</span>
+<span class="sd">        - Write the result in the header file</span>
+
+<span class="sd">        Warnings:</span>
+<span class="sd">            - Require a lot of VRAM from Qwen3-VL-2B-Instruct</span>
+<span class="sd">            - Must use populate_header() first to ensure that all files are tracked</span>
+<span class="sd">            </span>
+<span class="sd">        .. todo::</span>
+<span class="sd">            - arbitrarily choose VLM model from inputs</span>
+<span class="sd">            - disable the warning while labelling</span>
+<span class="sd">            - enhance debugging prints</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">root_directory</span> <span class="o">=</span> <span class="n">get_root_directory</span><span class="p">()</span>
+    <span class="c1"># model_name = &quot;Qwen/Qwen3-VL-2B-Instruct&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Start labelling with model </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2"> on path </span><span class="si">{</span><span class="n">root_directory</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># default: Load the model on the available device(s)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForImageTextToText</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+        <span class="n">model_name</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">device_map</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+        <span class="c1">#attn_implementation=&quot;flash_attention_2&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">processor</span> <span class="o">=</span> <span class="n">AutoProcessor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_name</span><span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+
+    <span class="n">tag_lists</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span>
+    <span class="c1"># print(tag_lists)</span>
+
+    <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;datapoints&quot;</span><span class="p">]:</span>
+
+        <span class="n">instruction</span> <span class="o">=</span> <span class="n">get_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;instruction&quot;</span><span class="p">])[</span><span class="s2">&quot;label&quot;</span><span class="p">][</span><span class="s2">&quot;instruction&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">instruction</span><span class="p">:</span>
+
+            <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+            
+            <span class="k">while</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+
+                <span class="n">prompt_current_tag_list</span> <span class="o">=</span> <span class="s2">&quot;Current tag lists: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">tag_lists</span><span class="p">)</span>
+                
+                <span class="n">custom_prompt</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">prompt_introduction</span> <span class="o">+</span>
+                    <span class="n">prompt_is_failed_outline</span> <span class="o">+</span>
+                    <span class="n">prompt_instruction_outline_strict</span> <span class="o">+</span>
+                    <span class="n">prompt_deliverables</span> <span class="o">+</span>
+                    <span class="n">prompt_current_tag_list</span>
+                <span class="p">)</span>
+
+                <span class="nb">print</span><span class="p">(</span><span class="n">prompt_current_tag_list</span><span class="p">)</span>
+                
+                <span class="c1"># Messages containing a video url(or a local path) and a text query</span>
+                <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[</span>
+                            <span class="p">{</span>
+                                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;video&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;video&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">root_directory</span> <span class="o">/</span> <span class="n">datapoint</span> <span class="o">/</span> <span class="s2">&quot;camera_front_head_rgb.mp4&quot;</span><span class="p">),</span>
+                                <span class="s2">&quot;fps&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                            <span class="p">},</span>
+                            <span class="p">{</span>
+                              <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;video&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;video&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">root_directory</span> <span class="o">/</span> <span class="n">datapoint</span> <span class="o">/</span> <span class="s2">&quot;camera_left_wrist.mp4&quot;</span><span class="p">),</span>
+                              <span class="s2">&quot;fps&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="p">},</span>
+                            <span class="p">{</span>
+                              <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;video&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;video&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">root_directory</span> <span class="o">/</span> <span class="n">datapoint</span> <span class="o">/</span> <span class="s2">&quot;camera_right_wrist.mp4&quot;</span><span class="p">),</span>
+                              <span class="s2">&quot;fps&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="p">},</span>
+                            <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">custom_prompt</span><span class="p">},</span>
+                        <span class="p">],</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+
+                <span class="c1"># Preparation for inference</span>
+                <span class="n">inputs</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
+                    <span class="n">messages</span><span class="p">,</span>
+                    <span class="n">tokenize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">return_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
+                    <span class="n">fps</span><span class="o">=</span><span class="mi">2</span>
+                <span class="p">)</span>
+                <span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+                <span class="c1"># Inference: Generation of the output</span>
+                <span class="n">generated_ids</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">inputs</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">128</span><span class="p">)</span>
+                <span class="n">generated_ids_trimmed</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">out_ids</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">in_ids</span><span class="p">)</span> <span class="p">:]</span> <span class="k">for</span> <span class="n">in_ids</span><span class="p">,</span> <span class="n">out_ids</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">generated_ids</span><span class="p">)</span>
+                <span class="p">]</span>
+                <span class="n">output_text</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">batch_decode</span><span class="p">(</span>
+                    <span class="n">generated_ids_trimmed</span><span class="p">,</span> <span class="n">skip_special_tokens</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">clean_up_tokenization_spaces</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">output_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">output_text</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">tag_lists</span> <span class="o">+=</span> <span class="n">output_json</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">]</span>
+                    <span class="c1"># print(&quot;Tag is&quot;, output_json[&quot;tags&quot;])</span>
+                    <span class="n">tag_lists</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">tag_lists</span><span class="p">))</span>
+                    <span class="n">modify_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">output_json</span><span class="p">)</span>
+                    <span class="c1"># modify_datapoint(datapoint, use_dict=data, is_failed=output_json[&quot;is_failed&quot;], is_labelled=True, is_checked=False, instruction=output_json[&quot;instruction&quot;], tags=output_json[&quot;tags&quot;])</span>
+                    <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;is_failed&quot;] = output_json[&quot;is_failed&quot;]</span>
+                    <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;is_labelled&quot;] = True</span>
+                    <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;is_checked&quot;] = False</span>
+                    <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;instruction&quot;] = output_json[&quot;instruction&quot;]</span>
+                    <span class="c1"># data[&quot;datapoints&quot;][datapoint][&quot;tags&quot;] = output_json[&quot;tags&quot;]</span>
+                    <span class="c1"># data[&#39;count_labelled&#39;] += 1</span>
+                    <span class="c1"># if output_json[&quot;is_failed&quot;]: data[&#39;count_failed&#39;] += 1</span>
+                    <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Labelled </span><span class="si">{</span><span class="n">datapoint</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="n">get_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span><span class="w"> </span><span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;instruction&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;tags&#39;</span><span class="p">,</span><span class="s1">&#39;is_failed&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Failed attempt, retrying...&quot;</span><span class="p">)</span>
+                    <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skip </span><span class="si">{</span><span class="n">datapoint</span><span class="si">}</span><span class="s2"> as it has alreaby been labelled.&quot;</span><span class="p">)</span>
+
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">tag_lists</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag_list&quot;</span><span class="p">]))</span>
+    <span class="n">write_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finish labelling&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">ATLP  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">atlp.label2</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Phakhawanon.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

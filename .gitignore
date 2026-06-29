@@ -5,3 +5,4 @@ docs/source/
 header.json
 src/atlp/meshes
 src/atlp/*.xml
+src/atlp.egg-info

@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>ATLP Module &#8212; ATLP  documentation</title>
+    <title>atlp package &#8212; ATLP  documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/classic.css?v=2bf1fcf8" />
     
@@ -14,9 +14,7 @@
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Todo List" href="todo.html" />
-    <link rel="prev" title="ATLP Documentation" href="index.html" /> 
+    <link rel="search" title="Search" href="search.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
@@ -27,14 +25,8 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="right" >
-          <a href="todo.html" title="Todo List"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="index.html" title="ATLP Documentation"
-             accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">ATLP  documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">ATLP Module</a></li> 
+        <li class="nav-item nav-item-this"><a href="">atlp package</a></li> 
       </ul>
     </div>  
 
@@ -43,8 +35,29 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <section id="module-atlp">
-<span id="atlp-module"></span><h1>ATLP Module<a class="headerlink" href="#module-atlp" title="Link to this heading">¶</a></h1>
+  <section id="atlp-package">
+<h1>atlp package<a class="headerlink" href="#atlp-package" title="Link to this heading">¶</a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="atlp.evaluation.html">atlp.evaluation package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="atlp.evaluation.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="atlp.evaluation.html#module-atlp.evaluation.evaluate_tag">atlp.evaluation.evaluate_tag module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="atlp.evaluation.html#atlp.evaluation.evaluate_tag.evaluate_tag"><code class="docutils literal notranslate"><span class="pre">evaluate_tag()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="atlp.evaluation.html#module-atlp.evaluation">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-atlp.interface">
+<span id="atlp-interface-module"></span><h2>atlp.interface module<a class="headerlink" href="#module-atlp.interface" title="Link to this heading">¶</a></h2>
 <p>Summary of Automatic Task Labelling Pipeline (ATLP) Module</p>
 <p>Currently support automatic task labelling from Galbot G1 teleoperation dataset</p>
 <div class="admonition note">
@@ -70,14 +83,123 @@
 </ul>
 </div>
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.append_new_fields">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">append_new_fields</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#append_new_fields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.append_new_fields" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface._get_default_field_value">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">_get_default_field_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/atlp/interface.html#_get_default_field_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface._get_default_field_value" title="Link to this definition">¶</a></dt>
+<dd><p>Internal function</p>
+<p>Return the default value for the given field from the given field_values dict</p>
+<p>Do nothing if the given field is not in the field_values</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.interface._is_checked">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">_is_checked</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#_is_checked"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface._is_checked" title="Link to this definition">¶</a></dt>
+<dd><p>Determine whether the datapoint has been manually checked</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.interface._is_modelled">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">_is_modelled</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#_is_modelled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface._is_modelled" title="Link to this definition">¶</a></dt>
+<dd><p>Determine whether the datapoint has been modelled.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.interface._is_valid_field_value">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">_is_valid_field_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/atlp/interface.html#_is_valid_field_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface._is_valid_field_value" title="Link to this definition">¶</a></dt>
+<dd><p>Internal function</p>
+<p>Return True if the given value is the valid value of the given field from the given field_values.</p>
+<p>Return None if the given field is not inside the given field_values</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.interface._linear_interpolation">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">_linear_interpolation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ideal_time_array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">joint_arrays</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/atlp/interface.html#_linear_interpolation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface._linear_interpolation" title="Link to this definition">¶</a></dt>
+<dd><p>Linear interpolate the joint_arrays to all timestamps in ideal_time_array</p>
+<p>Assume that ideal_time_array is longer than time_array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ideal_time_array</strong> – (1, N) Timestamps of the wanted interpolated result</p></li>
+<li><p><strong>time_array</strong> – (1, n) Timestamps of the current joint_arrays</p></li>
+<li><p><strong>joint_arrays</strong> – (M, n) Joint arrays of the joint quantities</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Interpolated joint arrays with size (M, N)</p>
+</dd>
+</dl>
+<dl>
+<dt>where</dt><dd><p>M is the #rows of joint_arrays</p>
+<p>N is the #cols of ideal_time_array</p>
+<p>n is the #cols of joint_arrays and time_array</p>
+</dd>
+</dl>
+<div class="admonition-todo admonition" id="id2">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>Handle low j</p></li>
+</ul>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.interface.analyze_timestamp">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">analyze_timestamp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/atlp/interface.html#analyze_timestamp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.analyze_timestamp" title="Link to this definition">¶</a></dt>
+<dd><p>Find the min and max timestamps from the data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Dictionary of the data.json in each datapoint.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>(min, max)</dt><dd><p>min/max are the minumum and maximum timestamps in int</p>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.interface.append_new_fields">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">append_new_fields</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#append_new_fields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.append_new_fields" title="Link to this definition">¶</a></dt>
 <dd><p>Update the header file to include all fields inside field_values for each datapoint</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.count_datapoint_from_root">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">count_datapoint_from_root</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/atlp.html#count_datapoint_from_root"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.count_datapoint_from_root" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.convert_to_np_array">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">convert_to_np_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_timestamp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'position'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/atlp/interface.html#convert_to_np_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.convert_to_np_array" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieve the content of the data.json for the specific datapoint specified by the path to its report.txt</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Dictionary of data.json of the datapoint</p></li>
+<li><p><strong>field</strong> – String of field name that is the key of field_to_report_name_dict</p></li>
+<li><p><strong>min_timestamp</strong> – The minimum timestamp of the datapoint</p></li>
+<li><p><strong>diff</strong> – Difference between the maximum and minimum timestamps of the datapoint</p></li>
+<li><p><strong>duration</strong> – Duration of the datapoint in second</p></li>
+<li><p><strong>report_file_path</strong> – The path to the report.txt of the datapoint</p></li>
+<li><p><strong>quantity</strong> – Choose from “position”, “velocity”, and “effort”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl>
+<dt>(time_array, joint_arrays, subfields_list)</dt><dd><ul class="simple">
+<li><p>time_array is (1, N) numpy array that contains the time in second of each timestamp</p></li>
+<li><p>joint_arrays is (M, N) numpy array that contains the joint quantities of each timestamp</p></li>
+<li><p>subfields_list is a list of strings that describes the quantity of each row of joint_arrays</p></li>
+</ul>
+<p>where M is the length of subfields_list</p>
+<p>and N is the number of timestamps of the datapoint</p>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.interface.count_datapoint_from_root">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">count_datapoint_from_root</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#count_datapoint_from_root"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.count_datapoint_from_root" title="Link to this definition">¶</a></dt>
 <dd><p>Return number of datapoints inside the root directory</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -87,26 +209,136 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.display_instruction">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">display_instruction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">from_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#display_instruction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.display_instruction" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.display_instruction">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">display_instruction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">from_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#display_instruction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.display_instruction" title="Link to this definition">¶</a></dt>
 <dd><p>Print instruction for each datapoint</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.generate_header">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">generate_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#generate_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.generate_header" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.filter">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_checked</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_modelled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actual_tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_is_failed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actual_is_failed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/atlp/interface.html#filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.filter" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.interface.generate_header">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">generate_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#generate_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.generate_header" title="Link to this definition">¶</a></dt>
 <dd><p>Generate empty header file (header.json) if the header file has not been generated yet</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.get_datapoint">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">get_datapoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">motions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/atlp.html#get_datapoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.get_datapoint" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.get_all_joint_states">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">get_all_joint_states</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'position'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ideal_time_array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/atlp/interface.html#get_all_joint_states"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.get_all_joint_states" title="Link to this definition">¶</a></dt>
+<dd><p>Get all joint states as one large numpy arrays</p>
+<p>Currently only suppose quantity = “position”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>datapoint</strong> – Name of the datapoint</p></li>
+<li><p><strong>quantity</strong> – Must be “position”</p></li>
+<li><p><strong>ideal_time_array</strong> – (1, N) If specified, the joint states will be interpolated based on the given array instead.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>(ideal_time_array, joint_arrays, field_slicers_dict, subfields_dict)</dt><dd><ul class="simple">
+<li><p>ideal_time_array: (1, N)</p></li>
+<li><p>joint_arrays: (29, N)</p></li>
+<li><p>field_slicers_dict: Contain slice object describing the rows of joint_arrays</p></li>
+<li><p>subfields_dict: Contain subfields of all fields in joint_arrays</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.interface.get_datapoint">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">get_datapoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">motions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">get_all</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/atlp/interface.html#get_datapoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.get_datapoint" title="Link to this definition">¶</a></dt>
 <dd><p>Safely get the data from the specified datapoint</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.has_header">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">has_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/atlp.html#has_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.has_header" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.get_field_message_count">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">get_field_message_count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#get_field_message_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.get_field_message_count" title="Link to this definition">¶</a></dt>
+<dd><p>Return the message count of a field in the span of the datapoint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>field</strong> – The name of the field in the keys of field_to_report_name_dict</p></li>
+<li><p><strong>report_file_path</strong> – The path to the report.text of the datapoint</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The number of message count of the field as specified in the report.txt of the datapoint</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.interface.get_joint_states">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">get_joint_states</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'position'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/atlp/interface.html#get_joint_states"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.get_joint_states" title="Link to this definition">¶</a></dt>
+<dd><p>Get the joint states of the datapoint as numpy arrays</p>
+<p>Assume that the given datapoint exists</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>datapoint</strong> – Name of the datapoint</p></li>
+<li><p><strong>field</strong> – Name of the field as specified by the keys of short_name_to_field_name dict</p></li>
+<li><p><strong>quantity</strong> – Choose from “position”, “velocity”, or “effort”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl>
+<dt>(M, N) numpy array of joint quantities where</dt><dd><p>M is the number of subfields of the field</p>
+<p>N is the number of timestamps of the datapoint</p>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.interface.get_root_directory">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">get_root_directory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#get_root_directory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.get_root_directory" title="Link to this definition">¶</a></dt>
+<dd><p>Return the current root directory as Path object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Path object of the root directory</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.interface.get_single_datapoint">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">get_single_datapoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/atlp/interface.html#get_single_datapoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.get_single_datapoint" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.interface.get_video_duration">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">get_video_duration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">report_file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#get_video_duration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.get_video_duration" title="Link to this definition">¶</a></dt>
+<dd><p>Return the duration of the video of the datapoint in the specified path</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>report_file_path</strong> – Path to the report file of a datapoint</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Video duration in second of the datapoint</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>..todo::</dt><dd><ul class="simple">
+<li><p>Fix path</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.interface.has_header">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">has_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#has_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.has_header" title="Link to this definition">¶</a></dt>
 <dd><p>Check if there is a header file (header.json) in the root directory</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -116,32 +348,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.label">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">label</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.label" title="Link to this definition">¶</a></dt>
-<dd><ul class="simple">
-<li><p>Label all tracked, unlabelled datapoints</p></li>
-<li><p>Write the result in the header file</p></li>
-</ul>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<ul class="simple">
-<li><p>Require a lot of VRAM from Qwen3-VL-2B-Instruct</p></li>
-<li><p>Must use populate_header() first to ensure that all files are tracked</p></li>
-</ul>
-</div>
-<div class="admonition-todo admonition" id="id2">
-<p class="admonition-title">Todo</p>
-<ul class="simple">
-<li><p>arbitrarily choose VLM model from inputs</p></li>
-<li><p>disable the warning while labelling</p></li>
-<li><p>enhance debugging prints</p></li>
-</ul>
-</div>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="atlp.list_datapoints">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">list_datapoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">from_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#list_datapoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.list_datapoints" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.list_datapoints">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">list_datapoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">from_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#list_datapoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.list_datapoints" title="Link to this definition">¶</a></dt>
 <dd><p>Print out all details of each datapoint</p>
 <div class="admonition-todo admonition" id="id3">
 <p class="admonition-title">Todo</p>
@@ -152,8 +360,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.load_data">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">load_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/atlp.html#load_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.load_data" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.load_data">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">load_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#load_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.load_data" title="Link to this definition">¶</a></dt>
 <dd><p>Load header.json as a dictionary</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -169,8 +377,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.modify_datapoint">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">modify_datapoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">motions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_add</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_vision</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_motion</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_all</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modify_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/atlp.html#modify_datapoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.modify_datapoint" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.modify_datapoint">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">modify_datapoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">motions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_add</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_vision</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_motion</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_all</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modify_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#modify_datapoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.modify_datapoint" title="Link to this definition">¶</a></dt>
 <dd><p>Add new datapoint or modify existing tracked datapoint either from header.json or the given dict</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -194,8 +402,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.populate_header">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">populate_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#populate_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.populate_header" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.populate_header">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">populate_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#populate_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.populate_header" title="Link to this definition">¶</a></dt>
 <dd><ul class="simple">
 <li><p>Update the header file to track all datapoints inside the root directory</p></li>
 <li><p>tag_list is untounched.</p></li>
@@ -203,8 +411,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.reset_all">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">reset_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">modify_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#reset_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.reset_all" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.reset_all">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">reset_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">modify_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#reset_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.reset_all" title="Link to this definition">¶</a></dt>
 <dd><p>Reset every value of every fields of all datapoints to their default values</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -218,14 +426,14 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.set_enable_actual_field">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">set_enable_actual_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_enable_actual_field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#set_enable_actual_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.set_enable_actual_field" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.set_enable_actual_field">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">set_enable_actual_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_enable_actual_field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#set_enable_actual_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.set_enable_actual_field" title="Link to this definition">¶</a></dt>
 <dd><p>Change enable_actual_field</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.set_root">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">set_root</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#set_root"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.set_root" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.set_root">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">set_root</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#set_root"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.set_root" title="Link to this definition">¶</a></dt>
 <dd><p>Set the root path</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -239,8 +447,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.show_statistics">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">show_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_datapoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#show_statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.show_statistics" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.show_statistics">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">show_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_datapoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#show_statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.show_statistics" title="Link to this definition">¶</a></dt>
 <dd><p>Print out statistics of the header file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -250,8 +458,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.tag_add">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">tag_add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_tag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#tag_add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.tag_add" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.tag_add">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">tag_add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_tag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#tag_add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.tag_add" title="Link to this definition">¶</a></dt>
 <dd><p>Add new tag(s) to the tag_list of the header file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -261,8 +469,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.tag_get">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">tag_get</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="_modules/atlp.html#tag_get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.tag_get" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.tag_get">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">tag_get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_actual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#tag_get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.tag_get" title="Link to this definition">¶</a></dt>
 <dd><p>Return tag_list of the header file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -272,8 +480,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.tag_remove">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">tag_remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#tag_remove"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.tag_remove" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.tag_remove">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">tag_remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#tag_remove"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.tag_remove" title="Link to this definition">¶</a></dt>
 <dd><p>Remove one tag from the tag_list of header file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -289,14 +497,14 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.update_statistics">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">update_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/atlp.html#update_statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.update_statistics" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.update_statistics">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">update_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#update_statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.update_statistics" title="Link to this definition">¶</a></dt>
 <dd><p>Update the statistics of the header.json or the given dict</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="atlp.write_data">
-<span class="sig-prename descclassname"><span class="pre">atlp.</span></span><span class="sig-name descname"><span class="pre">write_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp.html#write_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.write_data" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="atlp.interface.write_data">
+<span class="sig-prename descclassname"><span class="pre">atlp.interface.</span></span><span class="sig-name descname"><span class="pre">write_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/interface.html#write_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.interface.write_data" title="Link to this definition">¶</a></dt>
 <dd><p>Write data to header.json</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -313,6 +521,138 @@
 </dd></dl>
 
 </section>
+<section id="module-atlp.label">
+<span id="atlp-label-module"></span><h2>atlp.label module<a class="headerlink" href="#module-atlp.label" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.label.label">
+<span class="sig-prename descclassname"><span class="pre">atlp.label.</span></span><span class="sig-name descname"><span class="pre">label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Qwen/Qwen3-VL-2B-Instruct'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fail_verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/label.html#label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.label.label" title="Link to this definition">¶</a></dt>
+<dd><p>Label all tracked, unlabelled datapoints and write results to the header file.</p>
+<section id="supported-model-families">
+<h3>Supported model families<a class="headerlink" href="#supported-model-families" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Qwen3-VL       e.g. <code class="docutils literal notranslate"><span class="pre">&quot;Qwen/Qwen3-VL-2B-Instruct&quot;</span></code></p></li>
+<li><p>InternVL3      e.g. <code class="docutils literal notranslate"><span class="pre">&quot;OpenGVLab/InternVL3-8B-hf&quot;</span></code></p></li>
+<li><p>PaliGemma2     e.g. <code class="docutils literal notranslate"><span class="pre">&quot;google/paligemma2-3b-pt-224&quot;</span></code></p></li>
+<li><p>LLaVA-Video    e.g. <code class="docutils literal notranslate"><span class="pre">&quot;llava-hf/LLaVA-NeXT-Video-7B-hf&quot;</span></code></p></li>
+<li><p>Phi-3.5-Vision e.g. <code class="docutils literal notranslate"><span class="pre">&quot;microsoft/Phi-3.5-vision-instruct&quot;</span></code></p></li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<ul class="simple">
+<li><p>Requires substantial VRAM (amount varies by model size).</p></li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">populate_header()</span></code> first to ensure all files are tracked.</p></li>
+<li><p>PaliGemma2, LLaVA, and Phi-3.5 require <code class="docutils literal notranslate"><span class="pre">av</span></code> (PyAV) for frame sampling:
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">av</span></code>.</p></li>
+<li><p>Phi-3.5 additionally requires <code class="docutils literal notranslate"><span class="pre">pillow</span></code>.</p></li>
+</ul>
+</div>
+</section>
+</dd></dl>
+
+</section>
+<section id="module-atlp.label2">
+<span id="atlp-label2-module"></span><h2>atlp.label2 module<a class="headerlink" href="#module-atlp.label2" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.label2.label">
+<span class="sig-prename descclassname"><span class="pre">atlp.label2.</span></span><span class="sig-name descname"><span class="pre">label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Qwen/Qwen3-VL-2B-Instruct'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/label2.html#label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.label2.label" title="Link to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>Label all tracked, unlabelled datapoints</p></li>
+<li><p>Write the result in the header file</p></li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<ul class="simple">
+<li><p>Require a lot of VRAM from Qwen3-VL-2B-Instruct</p></li>
+<li><p>Must use populate_header() first to ensure that all files are tracked</p></li>
+</ul>
+</div>
+<div class="admonition-todo admonition" id="id8">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>arbitrarily choose VLM model from inputs</p></li>
+<li><p>disable the warning while labelling</p></li>
+<li><p>enhance debugging prints</p></li>
+</ul>
+</div>
+</dd></dl>
+
+</section>
+<section id="module-atlp.label3">
+<span id="atlp-label3-module"></span><h2>atlp.label3 module<a class="headerlink" href="#module-atlp.label3" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.label3.label">
+<span class="sig-prename descclassname"><span class="pre">atlp.label3.</span></span><span class="sig-name descname"><span class="pre">label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Qwen/Qwen3-VL-2B-Instruct'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fail_verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/atlp/label3.html#label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.label3.label" title="Link to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>Label all tracked, unlabelled datapoints</p></li>
+<li><p>Write the result in the header file</p></li>
+</ul>
+<dl class="simple">
+<dt>Supported models:</dt><dd><ul class="simple">
+<li><p>Qwen3-VL family  (e.g. “Qwen/Qwen3-VL-2B-Instruct”)</p></li>
+<li><p>InternVL3 family (e.g. “OpenGVLab/InternVL3-8B-hf”)</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<ul class="simple">
+<li><p>Require a lot of VRAM</p></li>
+<li><p>Must use populate_header() first to ensure that all files are tracked</p></li>
+</ul>
+</div>
+<div class="admonition-todo admonition" id="id9">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>disable the warning while labelling</p></li>
+<li><p>enhance debugging prints</p></li>
+</ul>
+</div>
+</dd></dl>
+
+</section>
+<section id="module-atlp.motion">
+<span id="atlp-motion-module"></span><h2>atlp.motion module<a class="headerlink" href="#module-atlp.motion" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.motion.is_self_collision">
+<span class="sig-prename descclassname"><span class="pre">atlp.motion.</span></span><span class="sig-name descname"><span class="pre">is_self_collision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_joint_arrays</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/atlp/motion.html#is_self_collision"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.motion.is_self_collision" title="Link to this definition">¶</a></dt>
+<dd><p>Determine whether the given all_joint_arrays has any self collision or not.
+Does not update the value inside the header file
+Still not functionable.</p>
+</dd></dl>
+
+</section>
+<section id="module-atlp.vision">
+<span id="atlp-vision-module"></span><h2>atlp.vision module<a class="headerlink" href="#module-atlp.vision" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-atlp.visualizer">
+<span id="atlp-visualizer-module"></span><h2>atlp.visualizer module<a class="headerlink" href="#module-atlp.visualizer" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.visualizer.plot_joint_states">
+<span class="sig-prename descclassname"><span class="pre">atlp.visualizer.</span></span><span class="sig-name descname"><span class="pre">plot_joint_states</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">joint_arrays</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subfields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/atlp/visualizer.html#plot_joint_states"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.visualizer.plot_joint_states" title="Link to this definition">¶</a></dt>
+<dd><p>Plot joint states</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_array</strong></p></li>
+<li><p><strong>joint_arrays</strong></p></li>
+<li><p><strong>subfields</strong></p></li>
+<li><p><strong>quantity</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="atlp.visualizer.simulate_joint_arrays">
+<span class="sig-prename descclassname"><span class="pre">atlp.visualizer.</span></span><span class="sig-name descname"><span class="pre">simulate_joint_arrays</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_time_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_joint_arrays</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/atlp/visualizer.html#simulate_joint_arrays"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#atlp.visualizer.simulate_joint_arrays" title="Link to this definition">¶</a></dt>
+<dd><p>Open the browser and 3D simulate the given robot pose</p>
+</dd></dl>
+
+</section>
+<section id="module-atlp">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-atlp" title="Link to this heading">¶</a></h2>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -324,41 +664,72 @@
   <div>
     <h3><a href="index.html">Table of Contents</a></h3>
     <ul>
-<li><a class="reference internal" href="#">ATLP Module</a><ul>
-<li><a class="reference internal" href="#atlp.append_new_fields"><code class="docutils literal notranslate"><span class="pre">append_new_fields()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.count_datapoint_from_root"><code class="docutils literal notranslate"><span class="pre">count_datapoint_from_root()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.display_instruction"><code class="docutils literal notranslate"><span class="pre">display_instruction()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.generate_header"><code class="docutils literal notranslate"><span class="pre">generate_header()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.get_datapoint"><code class="docutils literal notranslate"><span class="pre">get_datapoint()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.has_header"><code class="docutils literal notranslate"><span class="pre">has_header()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.label"><code class="docutils literal notranslate"><span class="pre">label()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.list_datapoints"><code class="docutils literal notranslate"><span class="pre">list_datapoints()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.load_data"><code class="docutils literal notranslate"><span class="pre">load_data()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.modify_datapoint"><code class="docutils literal notranslate"><span class="pre">modify_datapoint()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.populate_header"><code class="docutils literal notranslate"><span class="pre">populate_header()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.reset_all"><code class="docutils literal notranslate"><span class="pre">reset_all()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.set_enable_actual_field"><code class="docutils literal notranslate"><span class="pre">set_enable_actual_field()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.set_root"><code class="docutils literal notranslate"><span class="pre">set_root()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.show_statistics"><code class="docutils literal notranslate"><span class="pre">show_statistics()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.tag_add"><code class="docutils literal notranslate"><span class="pre">tag_add()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.tag_get"><code class="docutils literal notranslate"><span class="pre">tag_get()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.tag_remove"><code class="docutils literal notranslate"><span class="pre">tag_remove()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.update_statistics"><code class="docutils literal notranslate"><span class="pre">update_statistics()</span></code></a></li>
-<li><a class="reference internal" href="#atlp.write_data"><code class="docutils literal notranslate"><span class="pre">write_data()</span></code></a></li>
+<li><a class="reference internal" href="#">atlp package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-atlp.interface">atlp.interface module</a><ul>
+<li><a class="reference internal" href="#atlp.interface._get_default_field_value"><code class="docutils literal notranslate"><span class="pre">_get_default_field_value()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface._is_checked"><code class="docutils literal notranslate"><span class="pre">_is_checked()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface._is_modelled"><code class="docutils literal notranslate"><span class="pre">_is_modelled()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface._is_valid_field_value"><code class="docutils literal notranslate"><span class="pre">_is_valid_field_value()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface._linear_interpolation"><code class="docutils literal notranslate"><span class="pre">_linear_interpolation()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.analyze_timestamp"><code class="docutils literal notranslate"><span class="pre">analyze_timestamp()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.append_new_fields"><code class="docutils literal notranslate"><span class="pre">append_new_fields()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.convert_to_np_array"><code class="docutils literal notranslate"><span class="pre">convert_to_np_array()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.count_datapoint_from_root"><code class="docutils literal notranslate"><span class="pre">count_datapoint_from_root()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.display_instruction"><code class="docutils literal notranslate"><span class="pre">display_instruction()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.filter"><code class="docutils literal notranslate"><span class="pre">filter()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.generate_header"><code class="docutils literal notranslate"><span class="pre">generate_header()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.get_all_joint_states"><code class="docutils literal notranslate"><span class="pre">get_all_joint_states()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.get_datapoint"><code class="docutils literal notranslate"><span class="pre">get_datapoint()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.get_field_message_count"><code class="docutils literal notranslate"><span class="pre">get_field_message_count()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.get_joint_states"><code class="docutils literal notranslate"><span class="pre">get_joint_states()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.get_root_directory"><code class="docutils literal notranslate"><span class="pre">get_root_directory()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.get_single_datapoint"><code class="docutils literal notranslate"><span class="pre">get_single_datapoint()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.get_video_duration"><code class="docutils literal notranslate"><span class="pre">get_video_duration()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.has_header"><code class="docutils literal notranslate"><span class="pre">has_header()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.list_datapoints"><code class="docutils literal notranslate"><span class="pre">list_datapoints()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.load_data"><code class="docutils literal notranslate"><span class="pre">load_data()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.modify_datapoint"><code class="docutils literal notranslate"><span class="pre">modify_datapoint()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.populate_header"><code class="docutils literal notranslate"><span class="pre">populate_header()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.reset_all"><code class="docutils literal notranslate"><span class="pre">reset_all()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.set_enable_actual_field"><code class="docutils literal notranslate"><span class="pre">set_enable_actual_field()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.set_root"><code class="docutils literal notranslate"><span class="pre">set_root()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.show_statistics"><code class="docutils literal notranslate"><span class="pre">show_statistics()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.tag_add"><code class="docutils literal notranslate"><span class="pre">tag_add()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.tag_get"><code class="docutils literal notranslate"><span class="pre">tag_get()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.tag_remove"><code class="docutils literal notranslate"><span class="pre">tag_remove()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.update_statistics"><code class="docutils literal notranslate"><span class="pre">update_statistics()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.interface.write_data"><code class="docutils literal notranslate"><span class="pre">write_data()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-atlp.label">atlp.label module</a><ul>
+<li><a class="reference internal" href="#atlp.label.label"><code class="docutils literal notranslate"><span class="pre">label()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-atlp.label2">atlp.label2 module</a><ul>
+<li><a class="reference internal" href="#atlp.label2.label"><code class="docutils literal notranslate"><span class="pre">label()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-atlp.label3">atlp.label3 module</a><ul>
+<li><a class="reference internal" href="#atlp.label3.label"><code class="docutils literal notranslate"><span class="pre">label()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-atlp.motion">atlp.motion module</a><ul>
+<li><a class="reference internal" href="#atlp.motion.is_self_collision"><code class="docutils literal notranslate"><span class="pre">is_self_collision()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-atlp.vision">atlp.vision module</a></li>
+<li><a class="reference internal" href="#module-atlp.visualizer">atlp.visualizer module</a><ul>
+<li><a class="reference internal" href="#atlp.visualizer.plot_joint_states"><code class="docutils literal notranslate"><span class="pre">plot_joint_states()</span></code></a></li>
+<li><a class="reference internal" href="#atlp.visualizer.simulate_joint_arrays"><code class="docutils literal notranslate"><span class="pre">simulate_joint_arrays()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-atlp">Module contents</a></li>
 </ul>
 </li>
 </ul>
 
-  </div>
-  <div>
-    <h4>Previous topic</h4>
-    <p class="topless"><a href="index.html"
-                          title="previous chapter">ATLP Documentation</a></p>
-  </div>
-  <div>
-    <h4>Next topic</h4>
-    <p class="topless"><a href="todo.html"
-                          title="next chapter">Todo List</a></p>
   </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
@@ -390,14 +761,8 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="right" >
-          <a href="todo.html" title="Todo List"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="index.html" title="ATLP Documentation"
-             >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">ATLP  documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">ATLP Module</a></li> 
+        <li class="nav-item nav-item-this"><a href="">atlp package</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
