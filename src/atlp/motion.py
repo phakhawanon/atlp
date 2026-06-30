@@ -303,9 +303,14 @@ def is_self_collision_obsolete(all_joint_arrays, distance_threshold=0.02):
 
 def model_is_self_collision(
     datapoints : list[str] = [],
-    frequency : float = 30,
-    is_calculate_distance : bool = False,
-    is_verbose : bool = False,
+    frequency : float = 30, # Hz
+    distance_threshold : float = 0.02,
+    model = None,
+    collision_model = None,
+    is_calculate_distance = False,
+    sampling_frequency : float = 10, # Hz
+    stop_at_first_collision : bool = True, # Only meaningful if is_calculate_distance=True
+    is_verbose : bool = False,  
     use_dict : dict = dict()
 ) -> None | dict:
     if is_verbose:
@@ -329,9 +334,14 @@ def model_is_self_collision(
             if is_verbose: print(f"Checking {datapoint}")
             is_collision, collision_timestamp = is_self_collision_from_datapoint(
                 datapoint=datapoint,
-                frequency=frequency,
-                is_verbose=is_verbose,
+                distance_threshold=distance_threshold,
+                model=model,
+                collision_model=collision_model,
                 is_calculate_distance=is_calculate_distance,
+                sampling_frequency=sampling_frequency,
+                frequency=frequency,
+                stop_at_first_collision=stop_at_first_collision,
+                is_verbose=is_verbose,
             )
             if is_verbose: print(f"{datapoint}'s self-collision status is {is_collision} at t={collision_timestamp}")
             data = modify_datapoint(
