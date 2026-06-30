@@ -18,6 +18,7 @@ from .interface import (
     get_single_datapoint,
     filter,
     get_video_frames,
+    get_video_duration,
 )
 
 from .label import (
@@ -35,4 +36,6 @@ from .evaluation import (
 
 from .motion import (
     is_self_collision,       
+    is_self_collision_from_datapoint,
+    model_is_self_collision,
 )

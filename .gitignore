@@ -6,3 +6,5 @@ header.json
 src/atlp/meshes
 src/atlp/*.xml
 src/atlp.egg-info
+src/atlp/label*.py
+!src/atlp/label.py

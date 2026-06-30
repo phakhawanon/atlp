@@ -1,6 +1,19 @@
 import pinocchio as pin
 import numpy as np
 from pathlib import Path
+import xml.etree.ElementTree as ET
+from .interface import (
+    get_all_joint_states,
+    get_video_duration,
+    filter,
+    load_data,
+    write_data,
+    modify_datapoint,
+    get_single_datapoint,
+)
+
+_model_bin_path = "model.bin"
+_collision_bin_path = "collision_model.bin"
 
 # file_path = 'data.json'
 # report_file_path = 'report.txt'
@@ -78,8 +91,168 @@ def _build_q(model, all_joint_arrays, t):
 
     return q
 
+def _remove_srdf_disabled_collisions(model, collision_model, srdf_path):
+    """Parse SRDF and remove all <disable_collisions> pairs by link name."""
+    tree = ET.parse(srdf_path)
+    root = tree.getroot()
+
+    for dc in root.findall("disable_collisions"):
+        link1 = dc.get("link1")
+        link2 = dc.get("link2")
+        _remove_collision_pairs_by_link_names(model, collision_model, link1, link2)
+
+def _get_joint_idx_for_link(model, link_name):
+    """Get the parent joint index for a link, searching both joint names and frame names."""
+    # 1. Try direct joint name match
+    joint_idx = {model.names[i]: i for i in range(model.njoints)}
+    if link_name in joint_idx:
+        return joint_idx[link_name]
+
+    # 2. Fall back: find link as a frame and return its parentJoint
+    for frame in model.frames:
+        if frame.name == link_name:
+            return frame.parentJoint
+
+    return None
+
+
+def _remove_collision_pairs_by_link_names(model, collision_model, link1_name, link2_name):
+    j1 = _get_joint_idx_for_link(model, link1_name)
+    j2 = _get_joint_idx_for_link(model, link2_name)
+
+    if j1 is None or j2 is None:
+        print(f"Warning: could not resolve '{link1_name}' or '{link2_name}' to a joint")
+        return
+
+    geoms1 = {i for i, g in enumerate(collision_model.geometryObjects) if g.parentJoint == j1}
+    geoms2 = {i for i, g in enumerate(collision_model.geometryObjects) if g.parentJoint == j2}
+
+    pairs_to_remove = [
+        pair for pair in collision_model.collisionPairs
+        if (pair.first in geoms1 and pair.second in geoms2) or
+           (pair.first in geoms2 and pair.second in geoms1)
+    ]
+    for pair in pairs_to_remove:
+        collision_model.removeCollisionPair(pair)
+
+def is_self_collision(
+    all_joint_arrays,
+    distance_threshold : float = 0.02,
+    model = None,
+    collision_model = None,
+    is_calculate_distance = False,
+    sampling_frequency : float = 10, # Hz
+    frequency : float = 30, # Hz
+    stop_at_first_collision : bool = True, # Only meaningful if is_calculate_distance=True
+    is_verbose : bool = False,
+) -> tuple[bool, int]:
+    """
+        Check whether the given all_joint_arrays have collision or not
     
-def is_self_collision(all_joint_arrays, distance_threshold=0.02):
+        Returns:
+            (is_self_collision, collision_timestamp) where
+                is_self_collision is bool
+                collision_timestamp is the timestamp that there is collision, -1 if there is no collision
+        ..todo::
+            - properly setup the paths to model.bin and collision_model.bin
+            - recompute .bin files so that the meshes are referenced correctly under the package directory
+    """
+    delta_n = int(frequency/sampling_frequency)
+
+    if (model is None) or (collision_model is None):
+        model = pin.Model()
+        model.loadFromBinary(_model_bin_path)
+
+        collision_model = pin.GeometryModel()
+        collision_model.loadFromBinary(_collision_bin_path)
+        
+        # still needed if you use named configs later
+        # pin.loadReferenceConfigurations(model, srdf_path, verbose=False)
+        
+        data = model.createData()
+        collision_data = collision_model.createData()
+    
+    n = all_joint_arrays.shape[1]
+    is_collision = False
+    
+    if is_calculate_distance:
+        # Calculate distance
+        collision_timestamp = -1
+        for t in range(0, n, delta_n):
+            q = _build_q(model, all_joint_arrays, t)
+            pin.forwardKinematics(model, data, q)          # <-- add this
+            pin.computeDistances(model, data, collision_model, collision_data, q)
+        
+            for k, cp in enumerate(collision_model.collisionPairs):
+                dr = collision_data.distanceResults[k]
+                if dr.min_distance < distance_threshold:
+                    name1 = collision_model.geometryObjects[cp.first].name
+                    name2 = collision_model.geometryObjects[cp.second].name
+                    id1 = cp.first
+                    id2 = cp.second
+                    if is_verbose:
+                        print(f"Collision: {name1}|{id1} <-> {name2}|{id2}: {dr.min_distance:.4f} m at t={t}")
+                    if stop_at_first_collision: return True, t
+                    elif not is_collision:
+                        is_collision = True
+                        collision_timestamp = t
+        return is_collision,collision_timestamp
+    else:
+        # Only booleans
+        
+        for t in range(0, n, delta_n):
+            # print(f"Computing timestamp {t}")
+            q = _build_q(model, all_joint_arrays, t)
+            pin.forwardKinematics(model, data, q)
+            pin.updateGeometryPlacements(model, data, collision_model, collision_data)
+        
+            # Set by index — modifies the actual object, not a copy
+            for k in range(len(collision_model.collisionPairs)):
+                collision_data.collisionRequests[k].security_margin = distance_threshold
+                
+            # 2. Check all pairs
+            is_collision = pin.computeCollisions(
+            collision_model, collision_data,
+            stop_at_first_collision=True   # True = faster, stops early
+            )
+        
+            if is_collision: 
+                if is_verbose:
+                    print(f"Collision detected at timestamp {t}")
+                return True, t
+        return False, -1
+
+def is_self_collision_from_datapoint(    
+    datapoint : str,
+    frequency : float = 30, # Hz
+    distance_threshold : float = 0.02,
+    model = None,
+    collision_model = None,
+    is_calculate_distance = False,
+    sampling_frequency : float = 10, # Hz
+    stop_at_first_collision : bool = True, # Only meaningful if is_calculate_distance=True
+    is_verbose : bool = False,
+) -> tuple[bool, int]:
+    total_time = get_video_duration(datapoint)
+    _, all_joint_arrays , *_ = get_all_joint_states(
+                                                    datapoint,
+                                                    frequency=frequency,
+                                                    total_time=total_time,
+                                                )
+    return is_self_collision(
+        all_joint_arrays=all_joint_arrays,
+        distance_threshold=distance_threshold,
+        model=model,
+        collision_model=collision_model,
+        is_calculate_distance=is_calculate_distance,
+        sampling_frequency=sampling_frequency,
+        frequency=frequency,
+        stop_at_first_collision=stop_at_first_collision,
+        is_verbose=is_verbose,
+    )
+
+# OBSOLETE
+def is_self_collision_obsolete(all_joint_arrays, distance_threshold=0.02):
     """
         Determine whether the given all_joint_arrays has any self collision or not.
         Does not update the value inside the header file
@@ -127,3 +300,54 @@ def is_self_collision(all_joint_arrays, distance_threshold=0.02):
         if is_collision: return True
 
     return False
+
+def model_is_self_collision(
+    datapoints : list[str] = [],
+    frequency : float = 30,
+    is_calculate_distance : bool = False,
+    is_verbose : bool = False,
+    use_dict : dict = dict()
+) -> None | dict:
+    if is_verbose:
+        print("Starting self-collision checking")
+
+    if len(use_dict) == 0:
+        data = load_data()
+    else:
+        data = use_dict
+    
+    if len(datapoints) == 0:
+        datapoints = filter(use_dict=data)
+    for datapoint in datapoints:
+        is_collision_checked = get_single_datapoint(
+                                                    datapoint=datapoint,
+                                                    main_field="motion",
+                                                    field="is_self_collide",
+                                                    use_dict=data,
+                                                )
+        if is_collision_checked is None:
+            if is_verbose: print(f"Checking {datapoint}")
+            is_collision, collision_timestamp = is_self_collision_from_datapoint(
+                datapoint=datapoint,
+                frequency=frequency,
+                is_verbose=is_verbose,
+                is_calculate_distance=is_calculate_distance,
+            )
+            if is_verbose: print(f"{datapoint}'s self-collision status is {is_collision} at t={collision_timestamp}")
+            data = modify_datapoint(
+                datapoint=datapoint,
+                use_dict=data,
+                motions={"is_self_collide": is_collision}
+            )
+        else:
+            print(f"Skipping {datapoint} as it has already been checked.")
+
+    if is_verbose:
+        print("Finish self-collision checking.")
+        
+    if len(use_dict) == 0:
+        write_data(data)
+        return None
+    return data
+        
+

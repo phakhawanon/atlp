@@ -19,7 +19,6 @@ import torch
 import numpy as np
 import av
 
-
 prompt_introduction = (
     "You are Galbot G1's instruction labeller."
     "The robot is instructed to perform a certain task."   

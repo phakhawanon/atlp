@@ -145,7 +145,7 @@ def analyze_timestamp(data: dict) -> tuple[int, int]:
 
 # Return duration of video in s
 # TODO: Fix path
-def get_video_duration(report_file_path: str) -> float:
+def _get_video_duration_from_path(report_file_path: str) -> float:
     """
         Return the duration of the video of the datapoint in the specified path
 
@@ -159,6 +159,21 @@ def get_video_duration(report_file_path: str) -> float:
             - Fix path
     """
     return float(linecache.getline(report_file_path,2).split(' ')[2])
+
+def get_video_duration(
+    datapoint : str,
+) -> float:
+    """
+        Return the duration of the video of the datapoint
+
+        Args:
+            datapoint: Name of the datapoint
+
+        Returns:
+            Video duration in second of the datapoint
+    """
+    report_file_path = str(root_directory / datapoint / "report.txt")
+    return _get_video_duration_from_path(report_file_path)
 
 def get_field_message_count(field: str, report_file_path: str) -> int:
     """
@@ -351,7 +366,7 @@ def get_joint_states(
     # print(diff)
 
     # Get duration in s
-    duration = get_video_duration(report_file_path)
+    duration = _get_video_duration_from_path(report_file_path)
     # print(duration)
 
     time_array, joint_arrays, subfields, qty = convert_to_np_array(
@@ -404,12 +419,12 @@ def _linear_interpolation(
         indices = [i * array_width // ideal_array_width for i in range(ideal_array_width)]
         return joint_arrays[:, indices]
 
+    j = 1
+
     for i in range(0, ideal_array_width):
 
-        j = 1
-
         try:
-            
+
             while time_array[j] < ideal_time_array[i] and j < array_width-1: j += 1
 
         finally:
@@ -510,13 +525,25 @@ def get_all_joint_states(
     """
     if quantity == "position":
 
-        time_array_odom, joint_arrays_odom, *_ = get_joint_states(datapoint, "odom", quantity="position")
-        time_array_left_arm, joint_arrays_left_arm, *_ = get_joint_states(datapoint, "left_arm_joints", quantity="position")
-        time_array_right_arm, joint_arrays_right_arm, *_ = get_joint_states(datapoint, "right_arm_joints", quantity="position")
-        time_array_leg, joint_arrays_leg, *_ = get_joint_states(datapoint, "leg_joints", quantity="position")
-        time_array_head, joint_arrays_head, *_ = get_joint_states(datapoint, "head_joints", quantity="position")
-        time_array_left_gripper, joint_arrays_left_gripper, *_ = get_joint_states(datapoint, "left_gripper", quantity="position")
-        time_array_right_gripper, joint_arrays_right_gripper, *_ = get_joint_states(datapoint, "right_gripper", quantity="position")
+        # Load data.json and shared values once for all fields
+        report_file_path = str(root_directory / datapoint / "report.txt")
+        file_path = root_directory / datapoint / "data.json"
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        min_timestamp, max_timestamp = analyze_timestamp(data)
+        diff = max_timestamp - min_timestamp
+        duration = _get_video_duration_from_path(report_file_path)
+
+        def _get(field, qty="position"):
+            return convert_to_np_array(data, short_name_to_field_name[field], min_timestamp, diff, duration, report_file_path, quantity=qty)
+
+        time_array_odom, joint_arrays_odom, *_ = _get("odom")
+        time_array_left_arm, joint_arrays_left_arm, *_ = _get("left_arm_joints")
+        time_array_right_arm, joint_arrays_right_arm, *_ = _get("right_arm_joints")
+        time_array_leg, joint_arrays_leg, *_ = _get("leg_joints")
+        time_array_head, joint_arrays_head, *_ = _get("head_joints")
+        time_array_left_gripper, joint_arrays_left_gripper, *_ = _get("left_gripper")
+        time_array_right_gripper, joint_arrays_right_gripper, *_ = _get("right_gripper")
         time_array_list = [
             time_array_odom,
             time_array_left_arm,
@@ -1655,6 +1682,27 @@ def get_video_frames(
     cap.release()
     return np.stack(frames)
 
+# def model(
+#     datapoints : list[str] = filter()
+# ) -> None:
+#     """
+#         Populate model fields to all datapoints
+
+#         ..todo::
+#             If datapoints is not specified, default to model everything
+#     """
+#     label(fail_verbose=False)
+#     print("Checking self_collision")
+#     for datapoint in datapoints:
+#         is_self_collision_from_datapoint(
+#                                          datapoint,
+#                                          frequency=30,
+#                                          sampling_frequency=10,
+#                                          distance_threshold=0.02,
+#                                          is_calculate_distance=False,
+#                                          stop_at_first_collision=True,
+#                                      )
+#     print("Finished checking self-collision")
 
 if __name__ == "__main__":
     print("This is ATLP module!")
