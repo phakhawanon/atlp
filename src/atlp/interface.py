@@ -155,7 +155,7 @@ def _get_video_duration_from_path(report_file_path: str) -> float:
         Returns:
             Video duration in second of the datapoint
 
-        ..todo::
+        .. todo::
             - Fix path
     """
     return float(linecache.getline(report_file_path,2).split(' ')[2])
@@ -642,11 +642,13 @@ def append_new_fields() -> None:
         
 def _get_default_field_value(field: str, field_values: dict):
     """
-        Internal function
-
         Return the default value for the given field from the given field_values dict
 
-        Do nothing if the given field is not in the field_values
+        Do nothing if the given field is not in the field_values (return None)
+
+        Args:
+            field: The name of the field you want to get the default value
+            field_values: The dictionary containing the default value
     """
 
     if field not in field_values:
@@ -664,11 +666,14 @@ def _get_default_field_value(field: str, field_values: dict):
 
 def _is_valid_field_value(value, field: str, field_values: dict):
     """
-        Internal function
-
         Return True if the given value is the valid value of the given field from the given field_values.
 
         Return None if the given field is not inside the given field_values
+
+        Args:
+            value: The value that you want to check
+            field: The name of the field you want to check
+            field_values: The dictionary containing the default value
     """
 
     if field not in field_values:
@@ -718,6 +723,17 @@ def _is_modelled(
 ) -> bool:
     """
         Determine whether the datapoint has been modelled.
+        (has the program automatically editted the value of the datapoint or not)
+
+        Change the logic in this function if you want different way to check if the datapoint has been modelled.
+
+        Args:
+            datapoint: The name of the datapoint you want to check
+            use_dict: (Optional) The dict of the header.json
+                If supplied, the values will be retreived from the dict instead of the header file.
+
+        Returns:
+            True if the datapoint has been modelled, False otherwise.
     """
     datapoint_tags = get_single_datapoint(datapoint,
                                           main_field="label",
@@ -732,7 +748,18 @@ def _is_checked(
     use_dict: dict = dict(),
 ) -> bool:
     """
-        Determine whether the datapoint has been manually checked
+        Determine whether the datapoint has been checked.
+        (user manually edits the values of the datapoint)
+
+        Change the logic in this function if you want different way to check if the datapoint has been checked.
+
+        Args:
+            datapoint: The name of the datapoint you want to check
+            use_dict: (Optional) The dict of the header.json
+                If supplied, the values will be retreived from the dict instead of the header file.
+
+        Returns:
+            True if the datapoint has been checked, False otherwise.
     """
     datapoint_tags = get_single_datapoint(datapoint,
                                           main_field="label",
@@ -750,6 +777,24 @@ def get_single_datapoint(
     from_actual: bool = False,
     use_dict: dict = dict(),
 ):
+    """
+        Get the value of a datapoint from a single field.
+
+        Raise exception for invalid main_field and field.
+
+        Return None if the value is not a valid value of that field
+        (see _is_valid_field_value() for which value is considered valid)
+
+        Args:
+            datapoint: The name of the datapoint
+            main_field: The name of the main_field. Must be either "label", "vision", or "motion"
+            field: The name of the field
+            from_actual: (Optional) If True, the value is retrieved from the actual field
+            use_dict: (Optional) If True, the supplied dict will be used to retreive the value instead of the header file.
+
+        Returns:
+            The requested value of the datapoint from the specified main_field and field.
+    """
     if main_field not in ["label", "vision", "motion"]:
         raise ValueError(f"Invalid main field. There is no {main_field}.")
 
@@ -782,14 +827,36 @@ def get_single_datapoint(
 
 def filter(
   use_dict: dict = dict(),
-  is_checked = None,
-  is_modelled = None,
+  is_checked: bool | None = None,
+  is_modelled: bool | None = None,
   # is_inconsistent = None,
-  model_tag = None,
-  actual_tag = None,
-  model_is_failed = None,
-  actual_is_failed = None,  
-):
+  model_tag: str | None = None,
+  actual_tag: str | None = None,
+  model_is_failed: bool | None = None,
+  actual_is_failed: bool | None = None,  
+  model_is_self_collide: bool | None = None,
+) -> list[str]:
+    """
+        Filter the datapoints to the specified keyword arguments (all optional)
+
+        If the kwarg is None, the filter is not applied for that kwarg.
+
+        Args:
+            use_dict: The dictionary of the header.json.
+                If supplied, the datapoint names will be retreieved from the dict instead of the header file.
+            is_checked: True, False, or None
+                The logic behind is_checked is inside _is_checked() (can be editted)
+            is_modelled: True, False, or None
+                The logic behind is_modelled is inside _is_modelled() (can be editted)
+            model_tag: A string, or None 
+            actual_tag: A string, or None
+            model_is_failed: True, False, or None
+            actual_is_failed: True, False, or None
+            model_is_self_collide: True, False, or None
+
+        Returns:
+            List of strings of the datapoint's name which satisfied the filter conditions
+    """
     if len(use_dict)==0: data=load_data()
     else: data=use_dict
         
@@ -833,6 +900,18 @@ def filter(
                                                   from_actual=True,
                                                   )
             if actual_tag not in datapoint_tags:
+                to_be_deleted_datapoint_set.add(datapoint)
+        datapoint_set.difference_update(to_be_deleted_datapoint_set)
+        to_be_deleted_datapoint_set = set()
+
+    if model_is_self_collide in [True, False]:        
+        for datapoint in datapoint_set:
+            datapoint_is_failed = get_single_datapoint(datapoint,
+                                                       main_field="motion",
+                                                       field="is_self_collide",
+                                                       use_dict=data,
+                                                       )
+            if datapoint_is_failed != model_is_self_collide:
                 to_be_deleted_datapoint_set.add(datapoint)
         datapoint_set.difference_update(to_be_deleted_datapoint_set)
         to_be_deleted_datapoint_set = set()
@@ -884,13 +963,34 @@ def get_datapoint(
     datapoint: str,
     from_actual: bool = False,
     use_dict: dict = dict(),
-    labels: list = [],
-    visions: list = [],
-    motions: list = [],
+    labels: list[str] = [],
+    visions: list[str] = [],
+    motions: list[str] = [],
     get_all: bool = False,
-):
+) -> dict:
     """
         Safely get the data from the specified datapoint
+
+        Edit this function to change the interface of getting the values from the datapoint.
+
+        All default functions inside the ATLP package and ATLP GUI package are built based on this function
+
+        Args:
+            datapoint: The name of the datapoint
+            from_actual: (Optional) If True, the value will be retrieved from the actual field.
+            use_dict: (Optional) If supplied, the value will be retrieved from the dict instead of the header file.
+            labels: List of label fields that you want to retrieved.
+            visions: List of vision fields that you want to retrieved.
+            motions: List of motion fields that you want to retrieved.
+            get_all: (Optional) If True, get the value of all label fields, vision fields, and motion fields.
+
+        Returns:
+            One dictionary with three keys, namely "label", "vision", and "motion".
+
+            The value of each key is another dict that contains the requested fields as the keys,
+            and the requested values as the values
+
+            Return empty dict if the request is not valid.
     """
     return_dict = dict()
     return_labels = dict()
@@ -967,12 +1067,25 @@ def modify_datapoint(
         Add new datapoint or modify existing tracked datapoint either from header.json or the given dict
 
         Args:
-            datapoint:
-            false_add:
-            use_dict:
-            reset_label:
-            reset_all:
-            options:
+            datapoint: The name of the datapoint
+            use_dict: (Optional) If supplied, the values from the dict is modified instead of the header.json
+            labels: A dictionary containing the label fields as keys and the label field values that you want to modify as the values
+            visions: A dictionary containing the vision fields as keys and the vision field values that you want to modify as the values
+            motions: A dictionary containing the motion fields as keys and the motion field values that you want to modify as the values
+            force_add: (Optional) If True, and if the datapoint is not already in the header.json or the supplied dict (in case of use_dict),
+                then, the new datapoint will be added to the header.json or the use_dict.
+                If False, and the datapoint is not already in the header.json or the supplied dict (in case of use_dict),
+                then, return None.
+            reset_label: (Optional) If True, the values inside the label fields are resetted.
+            reset_vision: (Optional) If True, the values inside the vision fields are resetted.
+            reset_motion: (Optional) If True, the values inside the motion fields are resetted.
+            reset_all: (Optional) If True, the values inside all model fields (if modify_actual=False) or actual fields (if modify_actual=True) are resetted.
+            modify_actual: (Optional) If True, the values inside the actual fields are modified.            
+
+        Returns:
+            If use_dict=True, return the modified dict
+
+            If use_dict=False, return empty dict (the changes are automatically updated to the header.json)
 
         .. todo::
             - update global dataset statistics
@@ -1252,10 +1365,18 @@ def modify_datapoint(
 
 
         
-# To be safely retired     
+# To be safely retired?     
 def update_statistics(use_dict: dict=dict()) -> dict:
     """
         Update the statistics of the header.json or the given dict
+
+        Args:
+            use_dict: (Optional) If supplied, modify the content of the dict instead of the header.json
+
+        Returns:
+            If use_dict is supplied, return the modified dict
+
+            If use_dict is not supplied, return an empty dict
     """
     
     # Load data
@@ -1434,8 +1555,11 @@ def count_datapoint_from_root() -> int:
 
 def populate_header() -> None:
     """
-        - Update the header file to track all datapoints inside the root directory
-        - tag_list is untounched.
+        Check and update the data inside the header.json to match the current datapoints inside the root.
+    
+        .. todo::
+            - Update the header file to track all datapoints inside the root directory
+            - tag_list is untounched.
     """
 
     # Ensure that header file is generated
@@ -1525,9 +1649,13 @@ def tag_add(new_tag: str | list[str]) -> None:
 def tag_get(
     use_dict: dict = dict(),
     from_actual: bool = False,
-) -> list:
+) -> list[str]:
     """
-        Return tag_list of the header file
+        Return tag_list of the header file or the supplied use_dict
+
+        Args:
+            use_dict: (Optional) If supplied, get the tag list from the use_dict instead of header.json.
+            from_actual: (Optional) If true, the tag list will be retrieved from the actual field.
 
         Returns:
             List of all tags inside the header.json
@@ -1602,7 +1730,7 @@ def reset_all(modify_actual: bool = False) -> None:
         Reset every value of every fields of all datapoints to their default values
 
         Args:
-            modify_actual:
+            modify_actual: If true, reset the values from the actual fields
                     
         Warning:
             When called, all datapoint information is deleted.
@@ -1628,6 +1756,9 @@ def reset_all(modify_actual: bool = False) -> None:
 def display_instruction(from_actual: bool = False) -> None:
     """
         Print instruction for each datapoint
+
+        Args:
+            from_actual: If True, display the actual field values instead
     """
 
     data = load_data()

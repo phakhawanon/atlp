@@ -71,6 +71,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">linecache</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">cv2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
 
 <span class="c1"># Leave this empty if using in this directory</span>
@@ -188,9 +189,9 @@
 
 <span class="c1"># Return duration of video in s</span>
 <span class="c1"># TODO: Fix path</span>
-<div class="viewcode-block" id="get_video_duration">
-<a class="viewcode-back" href="../../atlp.html#atlp.interface.get_video_duration">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_video_duration</span><span class="p">(</span><span class="n">report_file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="_get_video_duration_from_path">
+<a class="viewcode-back" href="../../atlp.html#atlp.interface._get_video_duration_from_path">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_video_duration_from_path</span><span class="p">(</span><span class="n">report_file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the duration of the video of the datapoint in the specified path</span>
 
@@ -200,10 +201,28 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Video duration in second of the datapoint</span>
 
-<span class="sd">        ..todo::</span>
+<span class="sd">        .. todo::</span>
 <span class="sd">            - Fix path</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">linecache</span><span class="o">.</span><span class="n">getline</span><span class="p">(</span><span class="n">report_file_path</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">2</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="get_video_duration">
+<a class="viewcode-back" href="../../atlp.html#atlp.interface.get_video_duration">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_video_duration</span><span class="p">(</span>
+    <span class="n">datapoint</span> <span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the duration of the video of the datapoint</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datapoint: Name of the datapoint</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Video duration in second of the datapoint</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">report_file_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root_directory</span> <span class="o">/</span> <span class="n">datapoint</span> <span class="o">/</span> <span class="s2">&quot;report.txt&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_get_video_duration_from_path</span><span class="p">(</span><span class="n">report_file_path</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="get_field_message_count">
@@ -344,8 +363,10 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">get_joint_states</span><span class="p">(</span>
     <span class="n">datapoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">quantity</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;position&quot;</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+    <span class="n">quantity</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;position&quot;</span><span class="p">,</span>
+    <span class="n">frequency</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">total_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the joint states of the datapoint as numpy arrays</span>
 
@@ -355,12 +376,15 @@
 <span class="sd">            datapoint: Name of the datapoint</span>
 <span class="sd">            field: Name of the field as specified by the keys of short_name_to_field_name dict</span>
 <span class="sd">            quantity: Choose from &quot;position&quot;, &quot;velocity&quot;, or &quot;effort&quot;</span>
+<span class="sd">            frequency: If provided along with total_time, resample the output to this frequency (Hz)</span>
+<span class="sd">            total_time: Duration in seconds to resample over; required when frequency is set</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            (M, N) numpy array of joint quantities where</span>
-<span class="sd">                M is the number of subfields of the field</span>
-
-<span class="sd">                N is the number of timestamps of the datapoint</span>
+<span class="sd">            (time_array, joint_arrays, subfields, quantity)</span>
+<span class="sd">                - time_array: (N,) timestamps in seconds</span>
+<span class="sd">                - joint_arrays: (M, N) joint quantities</span>
+<span class="sd">                - subfields: list of subfield name strings</span>
+<span class="sd">                - quantity: the quantity string used</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">report_file_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root_directory</span> <span class="o">/</span> <span class="n">datapoint</span> <span class="o">/</span> <span class="s2">&quot;report.txt&quot;</span><span class="p">)</span>
     <span class="n">file_path</span> <span class="o">=</span> <span class="n">root_directory</span> <span class="o">/</span> <span class="n">datapoint</span> <span class="o">/</span> <span class="s2">&quot;data.json&quot;</span>
@@ -400,10 +424,20 @@
     <span class="c1"># print(diff)</span>
 
     <span class="c1"># Get duration in s</span>
-    <span class="n">duration</span> <span class="o">=</span> <span class="n">get_video_duration</span><span class="p">(</span><span class="n">report_file_path</span><span class="p">)</span>
+    <span class="n">duration</span> <span class="o">=</span> <span class="n">_get_video_duration_from_path</span><span class="p">(</span><span class="n">report_file_path</span><span class="p">)</span>
     <span class="c1"># print(duration)</span>
 
-    <span class="k">return</span> <span class="n">convert_to_np_array</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">min_timestamp</span><span class="p">,</span> <span class="n">diff</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">report_file_path</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">)</span></div>
+    <span class="n">time_array</span><span class="p">,</span> <span class="n">joint_arrays</span><span class="p">,</span> <span class="n">subfields</span><span class="p">,</span> <span class="n">qty</span> <span class="o">=</span> <span class="n">convert_to_np_array</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">min_timestamp</span><span class="p">,</span> <span class="n">diff</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">report_file_path</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">frequency</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">total_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">frequency</span> <span class="o">*</span> <span class="n">total_time</span><span class="p">)</span>
+        <span class="n">new_time_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">time_array</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">time_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">total_time</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">)</span>
+        <span class="n">joint_arrays</span> <span class="o">=</span> <span class="n">linear_interpolate_to_frequency</span><span class="p">(</span><span class="n">time_array</span><span class="p">,</span> <span class="n">joint_arrays</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">total_time</span><span class="p">)</span>
+        <span class="n">time_array</span> <span class="o">=</span> <span class="n">new_time_array</span>
+
+    <span class="k">return</span> <span class="n">time_array</span><span class="p">,</span> <span class="n">joint_arrays</span><span class="p">,</span> <span class="n">subfields</span><span class="p">,</span> <span class="n">qty</span></div>
 
 
 <div class="viewcode-block" id="_linear_interpolation">
@@ -442,12 +476,16 @@
     <span class="n">interpolated_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">joint_arrays</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ideal_array_width</span><span class="p">)</span>
     <span class="n">interpolated_joint_arrays</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="n">interpolated_size</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
 
+    <span class="k">if</span> <span class="n">ideal_array_width</span> <span class="o">&lt;</span> <span class="n">array_width</span><span class="p">:</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">array_width</span> <span class="o">//</span> <span class="n">ideal_array_width</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ideal_array_width</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">joint_arrays</span><span class="p">[:,</span> <span class="n">indices</span><span class="p">]</span>
+
+    <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span>
+
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ideal_array_width</span><span class="p">):</span>
 
-        <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span>
-
         <span class="k">try</span><span class="p">:</span>
-            
+
             <span class="k">while</span> <span class="n">time_array</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">ideal_time_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">and</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">array_width</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="k">finally</span><span class="p">:</span>
@@ -465,7 +503,53 @@
 
         <span class="n">interpolated_joint_arrays</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
 
-    <span class="k">return</span> <span class="n">interpolated_joint_arrays</span> </div>
+    <span class="k">return</span> <span class="n">interpolated_joint_arrays</span></div>
+
+
+<div class="viewcode-block" id="linear_interpolate_to_frequency">
+<a class="viewcode-back" href="../../atlp.html#atlp.interface.linear_interpolate_to_frequency">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">linear_interpolate_to_frequency</span><span class="p">(</span>
+    <span class="n">time_array</span> <span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+    <span class="n">joint_arrays</span> <span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+    <span class="n">frequency</span> <span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">total_time</span> <span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Interpolate joint_arrays to a fixed sampling frequency over a given duration.</span>
+
+<span class="sd">    Builds an ideal_time_array from frequency and total_time, then delegates to</span>
+<span class="sd">    _linear_interpolation().</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        time_array: (n,) Timestamps of the current joint_arrays</span>
+<span class="sd">        joint_arrays: (M, n) Joint arrays of the joint quantities</span>
+<span class="sd">        frequency: Desired output frequency in Hz (must be &gt; 0)</span>
+<span class="sd">        total_time: Duration of the output in seconds (must be &gt; 0)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Interpolated joint arrays with size (M, N) where N = frequency * total_time</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">frequency</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;frequency must be positive, got </span><span class="si">{</span><span class="n">frequency</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">total_time</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;total_time must be positive, got </span><span class="si">{</span><span class="n">total_time</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">time_array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;time_array must not be empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">joint_arrays</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">time_array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;joint_arrays last dimension (</span><span class="si">{</span><span class="n">joint_arrays</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">) must match &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;time_array length (</span><span class="si">{</span><span class="n">time_array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">frequency</span> <span class="o">*</span> <span class="n">total_time</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">num_samples</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;frequency * total_time = </span><span class="si">{</span><span class="n">frequency</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">total_time</span><span class="si">}</span><span class="s2"> produces 0 samples&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">ideal_time_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">time_array</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">time_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">total_time</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_linear_interpolation</span><span class="p">(</span><span class="n">ideal_time_array</span><span class="p">,</span> <span class="n">time_array</span><span class="p">,</span> <span class="n">joint_arrays</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="get_all_joint_states">
@@ -474,6 +558,8 @@
     <span class="n">datapoint</span> <span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">quantity</span> <span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;position&quot;</span><span class="p">,</span>
     <span class="n">ideal_time_array</span> <span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(),</span>
+    <span class="n">frequency</span> <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">total_time</span> <span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
     <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
     <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
@@ -488,24 +574,43 @@
 <span class="sd">        Args:</span>
 <span class="sd">            datapoint: Name of the datapoint</span>
 <span class="sd">            quantity: Must be &quot;position&quot;</span>
-<span class="sd">            ideal_time_array: (1, N) If specified, the joint states will be interpolated based on the given array instead.</span>
+<span class="sd">            ideal_time_array: (N,) If specified, the joint states will be interpolated to these timestamps.</span>
+<span class="sd">            frequency: If provided along with total_time, build ideal_time_array at this frequency (Hz).</span>
+<span class="sd">                       Takes priority over the ideal_time_array parameter.</span>
+<span class="sd">            total_time: Duration in seconds; required when frequency is set.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (ideal_time_array, joint_arrays, field_slicers_dict, subfields_dict)</span>
-<span class="sd">                - ideal_time_array: (1, N)</span>
+<span class="sd">                - ideal_time_array: (N,)</span>
 <span class="sd">                - joint_arrays: (29, N)</span>
 <span class="sd">                - field_slicers_dict: Contain slice object describing the rows of joint_arrays</span>
 <span class="sd">                - subfields_dict: Contain subfields of all fields in joint_arrays</span>
+
+<span class="sd">        where N = frequency * total_time if frequency/total_time are given,</span>
+<span class="sd">        or the length of ideal_time_array if provided,</span>
+<span class="sd">        or the length of the field with highest frequency otherwise.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">quantity</span> <span class="o">==</span> <span class="s2">&quot;position&quot;</span><span class="p">:</span>
 
-        <span class="n">time_array_odom</span><span class="p">,</span> <span class="n">joint_arrays_odom</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">get_joint_states</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="s2">&quot;odom&quot;</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="s2">&quot;position&quot;</span><span class="p">)</span>
-        <span class="n">time_array_left_arm</span><span class="p">,</span> <span class="n">joint_arrays_left_arm</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">get_joint_states</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="s2">&quot;left_arm_joints&quot;</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="s2">&quot;position&quot;</span><span class="p">)</span>
-        <span class="n">time_array_right_arm</span><span class="p">,</span> <span class="n">joint_arrays_right_arm</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">get_joint_states</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="s2">&quot;right_arm_joints&quot;</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="s2">&quot;position&quot;</span><span class="p">)</span>
-        <span class="n">time_array_leg</span><span class="p">,</span> <span class="n">joint_arrays_leg</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">get_joint_states</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="s2">&quot;leg_joints&quot;</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="s2">&quot;position&quot;</span><span class="p">)</span>
-        <span class="n">time_array_head</span><span class="p">,</span> <span class="n">joint_arrays_head</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">get_joint_states</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="s2">&quot;head_joints&quot;</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="s2">&quot;position&quot;</span><span class="p">)</span>
-        <span class="n">time_array_left_gripper</span><span class="p">,</span> <span class="n">joint_arrays_left_gripper</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">get_joint_states</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="s2">&quot;left_gripper&quot;</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="s2">&quot;position&quot;</span><span class="p">)</span>
-        <span class="n">time_array_right_gripper</span><span class="p">,</span> <span class="n">joint_arrays_right_gripper</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">get_joint_states</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span> <span class="s2">&quot;right_gripper&quot;</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="s2">&quot;position&quot;</span><span class="p">)</span>
+        <span class="c1"># Load data.json and shared values once for all fields</span>
+        <span class="n">report_file_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root_directory</span> <span class="o">/</span> <span class="n">datapoint</span> <span class="o">/</span> <span class="s2">&quot;report.txt&quot;</span><span class="p">)</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">root_directory</span> <span class="o">/</span> <span class="n">datapoint</span> <span class="o">/</span> <span class="s2">&quot;data.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">min_timestamp</span><span class="p">,</span> <span class="n">max_timestamp</span> <span class="o">=</span> <span class="n">analyze_timestamp</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">max_timestamp</span> <span class="o">-</span> <span class="n">min_timestamp</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="n">_get_video_duration_from_path</span><span class="p">(</span><span class="n">report_file_path</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_get</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">qty</span><span class="o">=</span><span class="s2">&quot;position&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">convert_to_np_array</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">short_name_to_field_name</span><span class="p">[</span><span class="n">field</span><span class="p">],</span> <span class="n">min_timestamp</span><span class="p">,</span> <span class="n">diff</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">report_file_path</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="n">qty</span><span class="p">)</span>
+
+        <span class="n">time_array_odom</span><span class="p">,</span> <span class="n">joint_arrays_odom</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">_get</span><span class="p">(</span><span class="s2">&quot;odom&quot;</span><span class="p">)</span>
+        <span class="n">time_array_left_arm</span><span class="p">,</span> <span class="n">joint_arrays_left_arm</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">_get</span><span class="p">(</span><span class="s2">&quot;left_arm_joints&quot;</span><span class="p">)</span>
+        <span class="n">time_array_right_arm</span><span class="p">,</span> <span class="n">joint_arrays_right_arm</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">_get</span><span class="p">(</span><span class="s2">&quot;right_arm_joints&quot;</span><span class="p">)</span>
+        <span class="n">time_array_leg</span><span class="p">,</span> <span class="n">joint_arrays_leg</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">_get</span><span class="p">(</span><span class="s2">&quot;leg_joints&quot;</span><span class="p">)</span>
+        <span class="n">time_array_head</span><span class="p">,</span> <span class="n">joint_arrays_head</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">_get</span><span class="p">(</span><span class="s2">&quot;head_joints&quot;</span><span class="p">)</span>
+        <span class="n">time_array_left_gripper</span><span class="p">,</span> <span class="n">joint_arrays_left_gripper</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">_get</span><span class="p">(</span><span class="s2">&quot;left_gripper&quot;</span><span class="p">)</span>
+        <span class="n">time_array_right_gripper</span><span class="p">,</span> <span class="n">joint_arrays_right_gripper</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">_get</span><span class="p">(</span><span class="s2">&quot;right_gripper&quot;</span><span class="p">)</span>
         <span class="n">time_array_list</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">time_array_odom</span><span class="p">,</span>
             <span class="n">time_array_left_arm</span><span class="p">,</span>
@@ -517,7 +622,11 @@
         <span class="p">]</span>
 
         <span class="c1"># Finding ideal_time_array</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ideal_time_array</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">frequency</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">total_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">frequency</span> <span class="o">*</span> <span class="n">total_time</span><span class="p">)</span>
+            <span class="n">ideal_time_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">time_array_odom</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">time_array_odom</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">total_time</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">ideal_time_array</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
 
             <span class="n">max_time_array_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">time_array_odom</span><span class="p">)</span>
             <span class="n">ideal_time_array</span> <span class="o">=</span> <span class="n">time_array_odom</span>
@@ -606,11 +715,13 @@
 <a class="viewcode-back" href="../../atlp.html#atlp.interface._get_default_field_value">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_default_field_value</span><span class="p">(</span><span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field_values</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Internal function</span>
-
 <span class="sd">        Return the default value for the given field from the given field_values dict</span>
 
-<span class="sd">        Do nothing if the given field is not in the field_values</span>
+<span class="sd">        Do nothing if the given field is not in the field_values (return None)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            field: The name of the field you want to get the default value</span>
+<span class="sd">            field_values: The dictionary containing the default value</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">field_values</span><span class="p">:</span>
@@ -631,11 +742,14 @@
 <a class="viewcode-back" href="../../atlp.html#atlp.interface._is_valid_field_value">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_is_valid_field_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field_values</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Internal function</span>
-
 <span class="sd">        Return True if the given value is the valid value of the given field from the given field_values.</span>
 
 <span class="sd">        Return None if the given field is not inside the given field_values</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: The value that you want to check</span>
+<span class="sd">            field: The name of the field you want to check</span>
+<span class="sd">            field_values: The dictionary containing the default value</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">field_values</span><span class="p">:</span>
@@ -691,6 +805,17 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Determine whether the datapoint has been modelled.</span>
+<span class="sd">        (has the program automatically editted the value of the datapoint or not)</span>
+
+<span class="sd">        Change the logic in this function if you want different way to check if the datapoint has been modelled.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datapoint: The name of the datapoint you want to check</span>
+<span class="sd">            use_dict: (Optional) The dict of the header.json</span>
+<span class="sd">                If supplied, the values will be retreived from the dict instead of the header file.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if the datapoint has been modelled, False otherwise.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">datapoint_tags</span> <span class="o">=</span> <span class="n">get_single_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span>
                                           <span class="n">main_field</span><span class="o">=</span><span class="s2">&quot;label&quot;</span><span class="p">,</span>
@@ -708,7 +833,18 @@
     <span class="n">use_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Determine whether the datapoint has been manually checked</span>
+<span class="sd">        Determine whether the datapoint has been checked.</span>
+<span class="sd">        (user manually edits the values of the datapoint)</span>
+
+<span class="sd">        Change the logic in this function if you want different way to check if the datapoint has been checked.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datapoint: The name of the datapoint you want to check</span>
+<span class="sd">            use_dict: (Optional) The dict of the header.json</span>
+<span class="sd">                If supplied, the values will be retreived from the dict instead of the header file.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if the datapoint has been checked, False otherwise.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">datapoint_tags</span> <span class="o">=</span> <span class="n">get_single_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span>
                                           <span class="n">main_field</span><span class="o">=</span><span class="s2">&quot;label&quot;</span><span class="p">,</span>
@@ -729,6 +865,24 @@
     <span class="n">from_actual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">use_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
 <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the value of a datapoint from a single field.</span>
+
+<span class="sd">        Raise exception for invalid main_field and field.</span>
+
+<span class="sd">        Return None if the value is not a valid value of that field</span>
+<span class="sd">        (see _is_valid_field_value() for which value is considered valid)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datapoint: The name of the datapoint</span>
+<span class="sd">            main_field: The name of the main_field. Must be either &quot;label&quot;, &quot;vision&quot;, or &quot;motion&quot;</span>
+<span class="sd">            field: The name of the field</span>
+<span class="sd">            from_actual: (Optional) If True, the value is retrieved from the actual field</span>
+<span class="sd">            use_dict: (Optional) If True, the supplied dict will be used to retreive the value instead of the header file.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The requested value of the datapoint from the specified main_field and field.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">main_field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="s2">&quot;vision&quot;</span><span class="p">,</span> <span class="s2">&quot;motion&quot;</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid main field. There is no </span><span class="si">{</span><span class="n">main_field</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
@@ -764,14 +918,36 @@
 <a class="viewcode-back" href="../../atlp.html#atlp.interface.filter">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span>
   <span class="n">use_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-  <span class="n">is_checked</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-  <span class="n">is_modelled</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+  <span class="n">is_checked</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+  <span class="n">is_modelled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
   <span class="c1"># is_inconsistent = None,</span>
-  <span class="n">model_tag</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-  <span class="n">actual_tag</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-  <span class="n">model_is_failed</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-  <span class="n">actual_is_failed</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  
-<span class="p">):</span>
+  <span class="n">model_tag</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+  <span class="n">actual_tag</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_is_failed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+  <span class="n">actual_is_failed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  
+  <span class="n">model_is_self_collide</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filter the datapoints to the specified keyword arguments (all optional)</span>
+
+<span class="sd">        If the kwarg is None, the filter is not applied for that kwarg.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            use_dict: The dictionary of the header.json.</span>
+<span class="sd">                If supplied, the datapoint names will be retreieved from the dict instead of the header file.</span>
+<span class="sd">            is_checked: True, False, or None</span>
+<span class="sd">                The logic behind is_checked is inside _is_checked() (can be editted)</span>
+<span class="sd">            is_modelled: True, False, or None</span>
+<span class="sd">                The logic behind is_modelled is inside _is_modelled() (can be editted)</span>
+<span class="sd">            model_tag: A string, or None </span>
+<span class="sd">            actual_tag: A string, or None</span>
+<span class="sd">            model_is_failed: True, False, or None</span>
+<span class="sd">            actual_is_failed: True, False, or None</span>
+<span class="sd">            model_is_self_collide: True, False, or None</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of strings of the datapoint&#39;s name which satisfied the filter conditions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">use_dict</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span> <span class="n">data</span><span class="o">=</span><span class="n">load_data</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span> <span class="n">data</span><span class="o">=</span><span class="n">use_dict</span>
         
@@ -815,6 +991,18 @@
                                                   <span class="n">from_actual</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                                   <span class="p">)</span>
             <span class="k">if</span> <span class="n">actual_tag</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">datapoint_tags</span><span class="p">:</span>
+                <span class="n">to_be_deleted_datapoint_set</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">datapoint</span><span class="p">)</span>
+        <span class="n">datapoint_set</span><span class="o">.</span><span class="n">difference_update</span><span class="p">(</span><span class="n">to_be_deleted_datapoint_set</span><span class="p">)</span>
+        <span class="n">to_be_deleted_datapoint_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">model_is_self_collide</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">]:</span>        
+        <span class="k">for</span> <span class="n">datapoint</span> <span class="ow">in</span> <span class="n">datapoint_set</span><span class="p">:</span>
+            <span class="n">datapoint_is_failed</span> <span class="o">=</span> <span class="n">get_single_datapoint</span><span class="p">(</span><span class="n">datapoint</span><span class="p">,</span>
+                                                       <span class="n">main_field</span><span class="o">=</span><span class="s2">&quot;motion&quot;</span><span class="p">,</span>
+                                                       <span class="n">field</span><span class="o">=</span><span class="s2">&quot;is_self_collide&quot;</span><span class="p">,</span>
+                                                       <span class="n">use_dict</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                                                       <span class="p">)</span>
+            <span class="k">if</span> <span class="n">datapoint_is_failed</span> <span class="o">!=</span> <span class="n">model_is_self_collide</span><span class="p">:</span>
                 <span class="n">to_be_deleted_datapoint_set</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">datapoint</span><span class="p">)</span>
         <span class="n">datapoint_set</span><span class="o">.</span><span class="n">difference_update</span><span class="p">(</span><span class="n">to_be_deleted_datapoint_set</span><span class="p">)</span>
         <span class="n">to_be_deleted_datapoint_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -869,13 +1057,34 @@
     <span class="n">datapoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">from_actual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">use_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-    <span class="n">labels</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
-    <span class="n">visions</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
-    <span class="n">motions</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+    <span class="n">visions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+    <span class="n">motions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
     <span class="n">get_all</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">):</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Safely get the data from the specified datapoint</span>
+
+<span class="sd">        Edit this function to change the interface of getting the values from the datapoint.</span>
+
+<span class="sd">        All default functions inside the ATLP package and ATLP GUI package are built based on this function</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datapoint: The name of the datapoint</span>
+<span class="sd">            from_actual: (Optional) If True, the value will be retrieved from the actual field.</span>
+<span class="sd">            use_dict: (Optional) If supplied, the value will be retrieved from the dict instead of the header file.</span>
+<span class="sd">            labels: List of label fields that you want to retrieved.</span>
+<span class="sd">            visions: List of vision fields that you want to retrieved.</span>
+<span class="sd">            motions: List of motion fields that you want to retrieved.</span>
+<span class="sd">            get_all: (Optional) If True, get the value of all label fields, vision fields, and motion fields.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            One dictionary with three keys, namely &quot;label&quot;, &quot;vision&quot;, and &quot;motion&quot;.</span>
+
+<span class="sd">            The value of each key is another dict that contains the requested fields as the keys,</span>
+<span class="sd">            and the requested values as the values</span>
+
+<span class="sd">            Return empty dict if the request is not valid.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">return_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
     <span class="n">return_labels</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
@@ -955,12 +1164,25 @@
 <span class="sd">        Add new datapoint or modify existing tracked datapoint either from header.json or the given dict</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            datapoint:</span>
-<span class="sd">            false_add:</span>
-<span class="sd">            use_dict:</span>
-<span class="sd">            reset_label:</span>
-<span class="sd">            reset_all:</span>
-<span class="sd">            options:</span>
+<span class="sd">            datapoint: The name of the datapoint</span>
+<span class="sd">            use_dict: (Optional) If supplied, the values from the dict is modified instead of the header.json</span>
+<span class="sd">            labels: A dictionary containing the label fields as keys and the label field values that you want to modify as the values</span>
+<span class="sd">            visions: A dictionary containing the vision fields as keys and the vision field values that you want to modify as the values</span>
+<span class="sd">            motions: A dictionary containing the motion fields as keys and the motion field values that you want to modify as the values</span>
+<span class="sd">            force_add: (Optional) If True, and if the datapoint is not already in the header.json or the supplied dict (in case of use_dict),</span>
+<span class="sd">                then, the new datapoint will be added to the header.json or the use_dict.</span>
+<span class="sd">                If False, and the datapoint is not already in the header.json or the supplied dict (in case of use_dict),</span>
+<span class="sd">                then, return None.</span>
+<span class="sd">            reset_label: (Optional) If True, the values inside the label fields are resetted.</span>
+<span class="sd">            reset_vision: (Optional) If True, the values inside the vision fields are resetted.</span>
+<span class="sd">            reset_motion: (Optional) If True, the values inside the motion fields are resetted.</span>
+<span class="sd">            reset_all: (Optional) If True, the values inside all model fields (if modify_actual=False) or actual fields (if modify_actual=True) are resetted.</span>
+<span class="sd">            modify_actual: (Optional) If True, the values inside the actual fields are modified.            </span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            If use_dict=True, return the modified dict</span>
+
+<span class="sd">            If use_dict=False, return empty dict (the changes are automatically updated to the header.json)</span>
 
 <span class="sd">        .. todo::</span>
 <span class="sd">            - update global dataset statistics</span>
@@ -1241,12 +1463,20 @@
 
 
         
-<span class="c1"># To be safely retired     </span>
+<span class="c1"># To be safely retired?     </span>
 <div class="viewcode-block" id="update_statistics">
 <a class="viewcode-back" href="../../atlp.html#atlp.interface.update_statistics">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">update_statistics</span><span class="p">(</span><span class="n">use_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="nb">dict</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Update the statistics of the header.json or the given dict</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            use_dict: (Optional) If supplied, modify the content of the dict instead of the header.json</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            If use_dict is supplied, return the modified dict</span>
+
+<span class="sd">            If use_dict is not supplied, return an empty dict</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="c1"># Load data</span>
@@ -1446,8 +1676,11 @@
 <a class="viewcode-back" href="../../atlp.html#atlp.interface.populate_header">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">populate_header</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        - Update the header file to track all datapoints inside the root directory</span>
-<span class="sd">        - tag_list is untounched.</span>
+<span class="sd">        Check and update the data inside the header.json to match the current datapoints inside the root.</span>
+<span class="sd">    </span>
+<span class="sd">        .. todo::</span>
+<span class="sd">            - Update the header file to track all datapoints inside the root directory</span>
+<span class="sd">            - tag_list is untounched.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># Ensure that header file is generated</span>
@@ -1543,9 +1776,13 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">tag_get</span><span class="p">(</span>
     <span class="n">use_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
     <span class="n">from_actual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Return tag_list of the header file</span>
+<span class="sd">        Return tag_list of the header file or the supplied use_dict</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            use_dict: (Optional) If supplied, get the tag list from the use_dict instead of header.json.</span>
+<span class="sd">            from_actual: (Optional) If true, the tag list will be retrieved from the actual field.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List of all tags inside the header.json</span>
@@ -1632,7 +1869,7 @@
 <span class="sd">        Reset every value of every fields of all datapoints to their default values</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            modify_actual:</span>
+<span class="sd">            modify_actual: If true, reset the values from the actual fields</span>
 <span class="sd">                    </span>
 <span class="sd">        Warning:</span>
 <span class="sd">            When called, all datapoint information is deleted.</span>
@@ -1661,6 +1898,9 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">display_instruction</span><span class="p">(</span><span class="n">from_actual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Print instruction for each datapoint</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            from_actual: If True, display the actual field values instead</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
@@ -1671,6 +1911,75 @@
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instruction</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">datapoint</span><span class="si">}</span><span class="s2"> : </span><span class="si">{</span><span class="n">instruction</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">][</span><span class="s1">&#39;instruction&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
+
+<span class="n">_VIDEO_TYPE_TO_FILENAME</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;head&quot;</span><span class="p">:</span> <span class="s2">&quot;camera_front_head_rgb.mp4&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;left_wrist&quot;</span><span class="p">:</span> <span class="s2">&quot;camera_left_wrist.mp4&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;right_wrist&quot;</span><span class="p">:</span> <span class="s2">&quot;camera_right_wrist.mp4&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="get_video_frames">
+<a class="viewcode-back" href="../../atlp.html#atlp.interface.get_video_frames">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_video_frames</span><span class="p">(</span>
+    <span class="n">datapoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">frame_ids</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">video_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get specific frames from a video in the datapoint as RGB numpy arrays.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        datapoint: Name of the datapoint folder (e.g. &quot;20260213_140653_record0&quot;)</span>
+<span class="sd">        frame_ids: A single frame index or a list of frame indices to retrieve</span>
+<span class="sd">        video_type: Camera type — one of &quot;head&quot;, &quot;left_wrist&quot;, or &quot;right_wrist&quot;</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        RGB numpy array of shape (N, H, W, 3) where N = number of requested frames</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">video_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_VIDEO_TYPE_TO_FILENAME</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid video_type &#39;</span><span class="si">{</span><span class="n">video_type</span><span class="si">}</span><span class="s2">&#39;. Must be one of </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">_VIDEO_TYPE_TO_FILENAME</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">frame_ids</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">frame_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">frame_ids</span><span class="p">]</span>
+
+    <span class="n">video_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root_directory</span> <span class="o">/</span> <span class="n">datapoint</span> <span class="o">/</span> <span class="n">_VIDEO_TYPE_TO_FILENAME</span><span class="p">[</span><span class="n">video_type</span><span class="p">])</span>
+    <span class="n">cap</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoCapture</span><span class="p">(</span><span class="n">video_path</span><span class="p">)</span>
+
+    <span class="n">frames</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="n">frame_ids</span><span class="p">:</span>
+        <span class="n">cap</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">CAP_PROP_POS_FRAMES</span><span class="p">,</span> <span class="n">fid</span><span class="p">)</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">frame</span> <span class="o">=</span> <span class="n">cap</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ret</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to read frame </span><span class="si">{</span><span class="n">fid</span><span class="si">}</span><span class="s2"> from </span><span class="si">{</span><span class="n">video_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2RGB</span><span class="p">))</span>
+
+    <span class="n">cap</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span></div>
+
+
+<span class="c1"># def model(</span>
+<span class="c1">#     datapoints : list[str] = filter()</span>
+<span class="c1"># ) -&gt; None:</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#         Populate model fields to all datapoints</span>
+
+<span class="c1">#         ..todo::</span>
+<span class="c1">#             If datapoints is not specified, default to model everything</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#     label(fail_verbose=False)</span>
+<span class="c1">#     print(&quot;Checking self_collision&quot;)</span>
+<span class="c1">#     for datapoint in datapoints:</span>
+<span class="c1">#         is_self_collision_from_datapoint(</span>
+<span class="c1">#                                          datapoint,</span>
+<span class="c1">#                                          frequency=30,</span>
+<span class="c1">#                                          sampling_frequency=10,</span>
+<span class="c1">#                                          distance_threshold=0.02,</span>
+<span class="c1">#                                          is_calculate_distance=False,</span>
+<span class="c1">#                                          stop_at_first_collision=True,</span>
+<span class="c1">#                                      )</span>
+<span class="c1">#     print(&quot;Finished checking self-collision&quot;)</span>
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;This is ATLP module!&quot;</span><span class="p">)</span>
