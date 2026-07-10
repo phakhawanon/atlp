@@ -443,7 +443,7 @@ def get_all_joint_states(
     NDArray[np.float64],
     NDArray[np.float64],
     dict,
-    dict
+    dict,
 ]:
     """
         Get all joint states as one large numpy arrays

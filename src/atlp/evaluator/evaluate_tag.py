@@ -4,8 +4,9 @@ from ..core.interface import (
         load_data,
     )
 import numpy as np
+from numpy.typing import NDArray
 
-def evaluate_tag() -> np.array:
+def evaluate_tag() -> NDArray[np.float64]:
     """
         Evaluate the accuracy of the ATLP by returning the confusion matrix
 
@@ -14,6 +15,17 @@ def evaluate_tag() -> np.array:
             - datapoints whose 'actual'/'label'/'tags' has only one tag
 
         Do nothing if enable_actual_field is False
+
+        Returns:
+            A confusion matrix of size (N+1, N) where N is the number of actual tags
+            
+            The rows represent the model field, and the columns represent the actual field.
+
+            The first N rows and columns represent the tags, whose order are the same to the order received by tag_get()
+
+            The last row represent either
+                1. model tags that are not in the actual tag list
+                2. more than one model tags for one datapoint
     """
 
     if not enable_actual_field: return

@@ -150,6 +150,18 @@ def is_self_collision(
 ) -> tuple[bool, int]:
     """
         Check whether the given all_joint_arrays have collision or not
+
+        Args:
+            all_joint_arrays: The all_joint_arrays from the teleop_reader module.
+            distance_threshold: (Optional) The maximum distance that still counts as collision
+            model: Please leave this as None
+            collision_model: Please leave this as None
+            is_calculate_distance: If True, calculate the distance too.
+                Use together with is_verbose=True to see the collision distance.
+            sampling_frequency: (Optional) The frequency for checking the self collision
+            frequency: The frequency of the given all_joint_arrays
+            stop_at_first_collision: If False, all collision pairs will be computed
+            is_verbose: If True, the function will log its results.
     
         Returns:
             (is_self_collision, collision_timestamp) where
@@ -235,6 +247,11 @@ def is_self_collision_from_datapoint(
     stop_at_first_collision : bool = True, # Only meaningful if is_calculate_distance=True
     is_verbose : bool = False,
 ) -> tuple[bool, int]:
+    """
+        Same functionality as is_self_collision(), but accepts datapoint name instead of all_joint_arrays
+
+        See is_self_collision() for documentation.
+    """
     total_time = get_video_duration(datapoint)
     _, all_joint_arrays , *_ = get_all_joint_states(
                                                     datapoint,
@@ -265,6 +282,29 @@ def model_is_self_collision(
     is_verbose : bool = False,  
     use_dict : dict = dict()
 ) -> None | dict:
+    """
+        Model the list of given datapoints for self-collision
+
+        Args:
+            datapoints: A list of datapoints.
+                If not supplied, model every datapoints
+            frequency: The frequency of the all_joint_arrays, which will be created for checking self-collision.
+            distance_threshold: (Optional) The maximum distance that still counts as collision
+            model: Please leave this as None
+            collision_model: Please leave this as None
+            is_calculate_distance: If True, calculate the distance too.
+                Use together with is_verbose=True to see the collision distance.
+            sampling_frequency: (Optional) The frequency for checking the self collision
+            stop_at_first_collision: If False, all collision pairs will be computed
+            is_verbose: If True, the function will log its results.
+            use_dict: (Optional) If supplied, modify the contents of the use_dict instead of the header.json
+
+        Reeturns:
+            If use_dict is supplied, return the modified dict
+            
+            If use_dict is not supplied, return None (The modification is saved to header.json)
+    
+    """
     if is_verbose:
         print("Starting self-collision checking")
 
@@ -311,5 +351,3 @@ def model_is_self_collision(
         write_data(data)
         return None
     return data
-        
-

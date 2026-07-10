@@ -1,6 +1,6 @@
 __pycache__
 test-files/
-docs/source/
+docs/build/
 .ipynb_checkpoints
 header.json
 src/atlp/meshes

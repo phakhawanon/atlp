@@ -1,4 +1,3 @@
-from .visualizer import (
+from .plotter import (
     plot_joint_states,
-    simulate_joint_arrays,
 )
