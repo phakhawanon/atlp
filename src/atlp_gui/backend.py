@@ -10,15 +10,7 @@ from fastapi import Request
 # import sys
 import json
 
-from .. import atlp
-# def import_from_path(module_name, absolute_path):
-#     spec = importlib.util.spec_from_file_location(module_name, absolute_path)
-#     module = importlib.util.module_from_spec(spec)
-#     sys.modules[module_name] = module  # optional: register it
-#     spec.loader.exec_module(module)
-#     return module
-
-# atlp = import_from_path("atlp", "/home/o25141/auto-task-labelling-pipeline/src/atlp/__init__.py")
+import atlp
 
 app = FastAPI()
 

@@ -51,5 +51,19 @@
         The datapoint folder should at least contain camera_front_head_rgb.mp4, which is the RGB video output from the Galbot G1 head camera
 """
 
+import os
+from pathlib import Path
+
+
+def _default_robot_data_dir() -> Path:
+    """Locate robot_data/ (URDF/MJCF/meshes), which ships as a sibling of src/, not inside the atlp package."""
+    env = os.environ.get("ATLP_ROBOT_DATA_DIR")
+    if env:
+        return Path(env).expanduser().resolve()
+    return Path(__file__).resolve().parents[2] / "robot_data"
+
+
+ROBOT_DATA_DIR = _default_robot_data_dir()
+
 from .core import *
 from .visualizer import *

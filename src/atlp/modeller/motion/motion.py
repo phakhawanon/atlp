@@ -19,15 +19,21 @@ from ...core import (
 )
 
 from ...core.interface import write_data
-
-_model_bin_path = "model.bin"
-_collision_bin_path = "collision_model.bin"
+from ... import ROBOT_DATA_DIR
 
 # file_path = 'data.json'
 # report_file_path = 'report.txt'
 
-# mjcf_path = Path("~/auto-task-labelling-pipeline/src/atlp/galbot_one_golf_collision_only.xml").expanduser()
-mjcf_path = Path("/home/o25141/galbot-sim-ioai/physics_sim_edu/assets/synthnova_assets/robots/galbot_one_foxtrot_description_simplified/galbot_one_foxtrot.xml")
+# MJCF is used for MeshCat simulation playback (atlp.visualizer.simulator) only.
+mjcf_path = ROBOT_DATA_DIR / "mjcf" / "galbot_one_golf_collision_only.xml"
+
+# URDF + SRDF are used to build/cache the pinocchio models used for self-collision checking.
+_urdf_dir = ROBOT_DATA_DIR / "urdf"
+_urdf_path = _urdf_dir / "galbot_one_golf_description" / "urdf" / "galbot_one_golf.urdf"
+_srdf_path = _urdf_dir / "galbot_one_golf_description" / "galbot_one_golf.srdf"
+
+_model_bin_path = ROBOT_DATA_DIR / "model.bin"
+_collision_bin_path = ROBOT_DATA_DIR / "collision_model.bin"
 
 
 # left_gripper and right_gripper do not appear in data.json,
@@ -143,6 +149,57 @@ def _remove_collision_pairs_by_link_names(model, collision_model, link1_name, li
     for pair in pairs_to_remove:
         collision_model.removeCollisionPair(pair)
 
+def _build_and_cache_models():
+    """
+        Build the model and collision_model from the URDF (+ SRDF, if present), then cache
+        them to _model_bin_path / _collision_bin_path so future loads skip the URDF parse.
+
+        Only GeometryType.COLLISION is requested from buildModelsFromUrdf: this pipeline
+        never uses visual_model, and the URDF's visual meshes are ~30x larger than its
+        collision meshes, so requesting VISUAL too would need those to be shipped for no
+        functional benefit.
+    """
+    model, collision_model = pin.buildModelsFromUrdf(
+        str(_urdf_path),
+        package_dirs=str(_urdf_dir),
+        geometry_types=[pin.GeometryType.COLLISION],
+    )
+
+    collision_model.addAllCollisionPairs()
+
+    if _srdf_path.is_file():
+        pin.loadReferenceConfigurations(model, str(_srdf_path), verbose=False)
+        pin.removeCollisionPairs(model, collision_model, str(_srdf_path), verbose=False)
+        _remove_srdf_disabled_collisions(model, collision_model, str(_srdf_path))
+    else:
+        print(
+            f"Warning: no SRDF found at {_srdf_path}. Building collision model with all "
+            "collision pairs enabled, including expected/adjacent-link pairs an SRDF would "
+            "normally exclude. This may cause false-positive self-collision reports."
+        )
+
+    model.saveToBinary(str(_model_bin_path))
+    collision_model.saveToBinary(str(_collision_bin_path))
+    return model, collision_model
+
+def _load_or_build_models():
+    """
+        Load the cached model/collision_model from robot_data/*.bin. If the cache is
+        missing, or fails to deserialize (e.g. built by a different pinocchio version),
+        rebuild it from source (URDF/SRDF) instead of crashing.
+    """
+    try:
+        model = pin.Model()
+        model.loadFromBinary(str(_model_bin_path))
+
+        collision_model = pin.GeometryModel()
+        collision_model.loadFromBinary(str(_collision_bin_path))
+
+        return model, collision_model
+    except Exception as e:
+        print(f"Could not load cached model from {ROBOT_DATA_DIR} ({e}); rebuilding from URDF/SRDF.")
+        return _build_and_cache_models()
+
 def is_self_collision(
     all_joint_arrays,
     distance_threshold : float = 0.02,
@@ -173,22 +230,12 @@ def is_self_collision(
             (is_self_collision, collision_timestamp) where
                 is_self_collision is bool
                 collision_timestamp is the timestamp that there is collision, -1 if there is no collision
-        ..todo::
-            - properly setup the paths to model.bin and collision_model.bin
-            - recompute .bin files so that the meshes are referenced correctly under the package directory
     """
     delta_n = int(frequency/sampling_frequency)
 
     if (model is None) or (collision_model is None):
-        model = pin.Model()
-        model.loadFromBinary(_model_bin_path)
+        model, collision_model = _load_or_build_models()
 
-        collision_model = pin.GeometryModel()
-        collision_model.loadFromBinary(_collision_bin_path)
-        
-        # still needed if you use named configs later
-        # pin.loadReferenceConfigurations(model, srdf_path, verbose=False)
-        
         data = model.createData()
         collision_data = collision_model.createData()
     

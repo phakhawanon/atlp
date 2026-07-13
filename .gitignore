@@ -3,8 +3,7 @@ test-files/
 docs/build/
 .ipynb_checkpoints
 header.json
-src/atlp/meshes
-src/atlp/*.xml
+robot_data/*.bin
 src/atlp.egg-info
 src/atlp/label*.py
 !src/atlp/label.py
