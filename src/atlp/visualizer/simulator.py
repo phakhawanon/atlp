@@ -35,7 +35,7 @@ def simulate_joint_arrays(
             all_joint_arrays: The all_joint_arrays obtained from teleop_reader.get_all_joint_states()
             time_step: Step size for the simulation, default to 50.
     """
-    model, _, collision_model, visual_model = pin.buildModelsFromMJCF(mjcf_path)
+    model, _, collision_model, visual_model = pin.buildModelsFromMJCF(str(mjcf_path))
     model.createData()
 
     # viewer = meshcat.Visualizer(zmq_url="tcp://127.0.0.1:6000")

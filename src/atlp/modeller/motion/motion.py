@@ -25,7 +25,7 @@ from ... import ROBOT_DATA_DIR
 # report_file_path = 'report.txt'
 
 # MJCF is used for MeshCat simulation playback (atlp.visualizer.simulator) only.
-mjcf_path = ROBOT_DATA_DIR / "mjcf" / "galbot_one_golf_collision_only.xml"
+mjcf_path = ROBOT_DATA_DIR / "mjcf" / "galbot_one_foxtrot.xml"
 
 # URDF + SRDF are used to build/cache the pinocchio models used for self-collision checking.
 _urdf_dir = ROBOT_DATA_DIR / "urdf"
