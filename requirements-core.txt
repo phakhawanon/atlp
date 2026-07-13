@@ -1,0 +1,10 @@
+# Core dependencies for `import atlp` (atlp.core + atlp.visualizer.plotter).
+# Sufficient for dataset management, tagging/evaluation, and joint-state plotting.
+# Does NOT include the heavier, application-specific subpackages
+# (atlp.modeller.label, atlp.visualizer.simulator, atlp_gui) -- see requirements-full.txt.
+
+numpy==2.4.6
+pandas==3.0.3
+opencv-python==4.13.0.92
+matplotlib==3.10.9
+pin==4.0.0

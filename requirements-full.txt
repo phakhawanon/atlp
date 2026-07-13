@@ -1,0 +1,24 @@
+# Full dependency set: everything in requirements-core.txt plus all
+# application-specific subpackages (auto-labelling, 3D simulation, GUI backend).
+
+-r requirements-core.txt
+
+# atlp.modeller.label -- VLM-based auto-labelling (Qwen3-VL / InternVL3 / LLaVA-NeXT-Video)
+transformers==5.9.0
+accelerate==1.13.0
+av==17.0.1
+pillow==12.2.0
+
+# torch/torchvision are pinned to the CPU-capable versions on PyPI.
+# For CUDA acceleration, install the matching build from the PyTorch index instead, e.g.:
+#   pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0
+torchvision==0.21.0
+
+# atlp.visualizer.simulator -- 3D playback via pinocchio.visualize.MeshcatVisualizer
+meshcat==0.3.2
+
+# atlp_gui -- backend/frontend server (run.sh)
+fastapi==0.137.1
+uvicorn[standard]==0.49.0
+pydantic==2.13.4

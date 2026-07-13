@@ -15,7 +15,12 @@ Then, run these commands to set up the conda environment for running the module.
 # Inside the root of the repo
 conda create -n atlp-env pip
 conda activate atlp-env
-pip install -r requirements.txt
+
+# If you only need `import atlp` (dataset management, tagging/evaluation, plotting):
+pip install -r requirements-core.txt
+
+# If you also need auto-labelling, 3D simulation, or the GUI backend:
+pip install -r requirements-full.txt
 ```
 Don't forget to use `conda deactivate` when you are done using this module.
 
