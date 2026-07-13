@@ -14,7 +14,7 @@
 
     One workaround of this problem is to
         1. read the header.json once and store it as a dictionary in python
-            >>> data = atlp.read_data()
+            >>> data = atlp.load_data()
         2. parse that dictionary to modify contents
             >>> data = atlp.modeller.label.label(use_dict=data)
         3. write to header.json once all modifications are completed
