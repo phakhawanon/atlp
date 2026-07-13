@@ -19,19 +19,17 @@ conda activate atlp-env
 # If you only need `import atlp` (dataset management, tagging/evaluation, plotting):
 pip install -r requirements-core.txt
 
-# If you also need auto-labelling, 3D simulation, or the GUI backend:
+# (Optional) If you also need auto-labelling, 3D simulation, or the GUI backend:
 pip install -r requirements-full.txt
+
+# Finally, install this package
+pip install -e .
 ```
 Don't forget to use `conda deactivate` when you are done using this module.
 
 ## Documentation
-Run index.html inside `/docs/build/html/`, or by using
-```bash
-# Inside the root of the repo
-cd docs/build/html/
-python -m http.server 8000
-```
-and access the `http://localhost:8000/` in your browser.
+
+The documentation can be accessed via [https://phakhawanon.github.io/atlp/](https://phakhawanon.github.io/atlp/)
 
 ## Usage
 Users are encouraged to import this module inside Jupyter notebook and use it as advised in the example of the documentation.
