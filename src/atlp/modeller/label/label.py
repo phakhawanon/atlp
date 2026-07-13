@@ -1,3 +1,12 @@
+"""
+    modeller.label.label module is for automatically labelling of instruction, tags, and is_failed.
+
+    This module requires transformer, torch, etc. to be installed.
+
+    Depending on the VLM model used, enough VRAM is required for inference.
+"""
+
+
 import json
 from transformers import (
     AutoModelForImageTextToText,

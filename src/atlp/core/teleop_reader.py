@@ -1,3 +1,13 @@
+"""
+    teleop_reader module is used to read the teleoperation data from the dataset.
+
+    By default, it is implemented for reading the teleopeartion dataset from galbot one golf foxtrot.
+
+    User is encouraged to modify this module if other datasets from different robots are desired.
+
+    This module required that cv2 is installed.
+"""
+
 import numpy as np
 from numpy.typing import NDArray
 import linecache

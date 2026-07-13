@@ -1,3 +1,9 @@
+"""
+    modeller.motion.motion concerns automatic modelling of motion fields.
+
+    This module requires pinocchio to be installed.
+"""
+
 import pinocchio as pin
 import numpy as np
 from pathlib import Path

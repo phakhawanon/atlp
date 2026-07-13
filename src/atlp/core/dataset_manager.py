@@ -1,3 +1,12 @@
+"""
+    dataset_manager module is a collection of helper functions for managing the teleoperation dataset.
+
+    It relies on atlp.core.interface (and possibly atlp.core.teleop_reader, if required)
+
+    User is encouraged to extend this modulle if they want to add more quality-of-life functions
+    without changing the core interface and teleop reader codes.
+"""
+
 from .interface import (
     label_field_values,
     vision_field_values,

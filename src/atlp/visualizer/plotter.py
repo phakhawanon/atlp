@@ -1,3 +1,11 @@
+"""
+    Plotter module is used to plot joint state graphs.
+
+    This module is automatically included when using ```import atlp````
+
+    This module required that matplotlib is installed.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
@@ -23,7 +31,6 @@ def plot_joint_states(
         
         .. todo::
             Configure saving path
-
     """    
     fig, axes = plt.subplots(len(subfields), 1, sharex=True, figsize=(5, len(subfields)*2.2))
     duration = time_array[-1] - time_array[0]

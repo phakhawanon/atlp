@@ -17,11 +17,11 @@
     Note:
         - User is encouraged to modify this code to match the robot data they have. (modifying atlp.core.teleop_reader)
         - Moreover, if the user finds that header.json is too slow for a larger dataset, 
-            they are encouraged to upgrade the ATLP fields storage. (modifying atlp.core.interface)
+        they are encouraged to upgrade the ATLP fields storage. (modifying atlp.core.interface)
 
     Warning:
         Because the atlp.core is referenced by every other subpackage, please modify the code with caution.
-            Namely, every mandatory input and output of a function should be properly maintained when you edit the code.
+        Namely, every mandatory input and output of a function should be properly maintained when you edit the code.
 """
 
 from .interface import (

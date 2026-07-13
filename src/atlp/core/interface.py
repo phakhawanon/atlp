@@ -1,6 +1,29 @@
-# Automatic Task Labelling Pipeline (ATLP)
-# Assume that nothing can altered the established header.json
-# Extend atlp to cover model:, actual:
+"""
+    Interface module is the core module used to store ATLP field values.
+
+    ATLP fields are fields that store values from the ATLP package.
+    For example, instruction, is_failed, is_self_collision, etc.
+
+    This module stores the ATLP field values in json format 
+    in the form of header.json inside the teleoperation dataset.
+
+    Currently, assume that nothing can alter the header.json aside from this ATLP package.
+
+    One downside of this header.json approach is that, every time the module wants to write/read from header.json,
+    the entire header.json is write/read. This may become the speed bottleneck for larger teleoperation datasets.
+
+    One workaround of this problem is to
+        1. read the header.json once and store it as a dictionary in python
+            >>> data = atlp.read_data()
+        2. parse that dictionary to modify contents
+            >>> data = atlp.modeller.label.label(use_dict=data)
+        3. write to header.json once all modifications are completed
+            >>> atlp.write_data(data)
+    This ensures that the header.json is read and written once, instead of every single get and set calls.
+
+    User is encouraged to modify this module to improve the interface for storing ATLP fields,
+    e.g. changing to a proper database regime if they reckon that the header.json approach is too inversatile or slow.
+"""
 
 import json
 from pathlib import Path

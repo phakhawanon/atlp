@@ -1,3 +1,11 @@
+"""
+    Simulator module is used for 3D simulation playback.
+
+    Use ```import atlp.visualizer.simulator``` to import this module.
+
+    This module requires that pinocchio is installed.
+"""
+
 import pinocchio as pin
 import numpy as np
 from pinocchio.visualize import MeshcatVisualizer
